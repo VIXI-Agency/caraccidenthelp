@@ -38,7 +38,20 @@ const benefits = [
 
 export default function Home() {
   useEffect(() => {
-    loadGrowform("growform-wrapper");
+    const wrapper = document.getElementById("growform-wrapper");
+    if (!wrapper) return;
+    // Defer Growform until the form section is near the viewport
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadGrowform("growform-wrapper");
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "300px" }
+    );
+    observer.observe(wrapper);
+    return () => observer.disconnect();
   }, []);
 
   return (
