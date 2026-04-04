@@ -1,96 +1,58 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Injured in an Accident? | CarAccidentHelp.net</title>
-  <meta name="description" content="Connect with top car accident lawyers who fight to maximize your payout. Use our free compensation calculator to see what you qualify for." />
+  <meta name="description" content="Connect with top car accident lawyers who fight to maximize your payout. Use our free compensation calculator to see what you qualify for.">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <meta name="theme-color" content="#101828">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>">
+
+  <!-- Preload critical assets -->
+  <link rel="preload" as="image" href="public/hero-bg-full.webp" fetchpriority="high">
+  <link rel="preload" as="image" href="public/logo-full.png" fetchpriority="high">
+
+  <!-- Google Fonts — async (non-render-blocking) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700;800&family=Open+Sans:wght@400;500;600&family=Poppins:wght@400;500;600;700&family=Abel&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700;800&family=Open+Sans:wght@400;500;600&family=Poppins:wght@400;500;600;700&family=Abel&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700;800&family=Open+Sans:wght@400;500;600&family=Poppins:wght@400;500;600;700&family=Abel&display=swap"></noscript>
+
+  <!-- GA4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6R1MVMNV9P"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6R1MVMNV9P');</script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-
     body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      -webkit-font-smoothing: antialiased;
-      font-family: 'Open Sans', Arial, sans-serif;
-      font-size: 15px;
-      line-height: 2;
-      color: #666;
-      background: #fff;
+      margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+      -webkit-font-smoothing: antialiased; font-family: 'Open Sans', Arial, sans-serif;
+      font-size: 15px; line-height: 1.6; color: #666; background: #fff;
     }
-
     h1, h2, h3, h4, h5, h6 {
-      font-family: 'Raleway', Arial, sans-serif;
-      font-weight: 700;
-      color: #3b4251;
-      line-height: 1.4;
-      margin: 0;
+      font-family: 'Raleway', Arial, sans-serif; font-weight: 700;
+      color: #3b4251; line-height: 1.4; margin: 0;
     }
-
     a { text-decoration: none; }
-
     /* ── Hero ── */
     .hero {
       background-image: linear-gradient(rgba(43,49,60,0.65), rgba(43,49,60,0.65)), url('public/hero-bg-full.webp');
-      background-size: cover;
-      background-position: center top;
-      padding: 60px 24px 70px;
-      text-align: center;
+      background-size: cover; background-position: center top;
+      padding: 60px 24px 70px; text-align: center;
     }
     .hero-logo { margin-bottom: 24px; }
     .hero-logo img { height: 66px; width: auto; display: inline-block; }
-    .hero h1 {
-      font-size: 34px;
-      font-weight: 700;
-      color: #fff;
-      margin: 0 0 20px;
-      text-transform: none;
-    }
-    .hero p {
-      font-family: 'Raleway', Arial, sans-serif;
-      font-weight: 600;
-      font-size: 20px;
-      color: #fff;
-      margin: 0;
-      line-height: 1.5;
-    }
+    .hero h1 { font-size: 34px; font-weight: 700; color: #fff; margin: 0 0 20px; }
+    .hero p { font-family: 'Raleway', Arial, sans-serif; font-weight: 600; font-size: 20px; color: #fff; margin: 0; line-height: 1.5; }
     .hero .accent { color: #16bc35; }
 
     /* ── Form section ── */
     .form-section { background: #fff; padding: 32px 24px 0; }
     .form-section .inner { max-width: 1140px; margin: 0 auto; }
-
-    .form-card-top {
-      background: #e2e2e2;
-      border-radius: 28px 28px 0 0;
-      padding: 28px 48px;
-      text-align: center;
-    }
-    .form-card-top p {
-      font-family: 'Raleway', Arial, sans-serif;
-      font-weight: 400;
-      font-size: 35px;
-      color: #003954;
-      margin: 0;
-      line-height: 1.5;
-    }
-
-    #growform-wrapper { width: 100%; min-height: 620px; line-height: 0; font-size: 0; }
-
-    .form-card-bottom {
-      background: #e2e2e2;
-      border-radius: 0 0 28px 28px;
-      padding: 28px 48px;
-      margin-top: -16px;
-      margin-bottom: 36px;
-    }
+    .form-card-top { background: #e2e2e2; border-radius: 28px 28px 0 0; padding: 28px 48px; text-align: center; }
+    .form-card-top p { font-family: 'Raleway', Arial, sans-serif; font-weight: 400; font-size: 35px; color: #003954; margin: 0; line-height: 1.5; }
+    #growform-wrapper { width: 100%; line-height: 1; font-size: 15px; }
+    .form-card-bottom { background: #e2e2e2; border-radius: 0 0 28px 28px; padding: 28px 48px; margin-top: -16px; margin-bottom: 36px; }
 
     /* ── 3-col ── */
     .three-col { display: flex; align-items: flex-start; flex-wrap: wrap; }
@@ -98,112 +60,101 @@
     .col-car img { width: 100%; height: auto; display: block; }
     .col-spacer { flex: 0 0 10%; width: 10%; }
     .col-text { flex: 0 0 65%; width: 65%; }
-    .col-text h2 {
-      font-size: 29px;
-      font-weight: 700;
-      color: #3b4251;
-      margin-bottom: 16px;
-      text-transform: none;
-    }
+    .col-text h2 { font-size: 29px; font-weight: 700; color: #3b4251; margin-bottom: 16px; }
     .col-text p { font-size: 15px; color: #666; line-height: 2; margin-bottom: 24px; }
-
-    .btn-green {
-      display: block;
-      background: #16bc35;
-      color: #fff;
-      font-family: 'Raleway', Arial, sans-serif;
-      font-weight: 700;
-      font-size: 20px;
-      text-align: center;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      padding: 16px 32px;
-      border-radius: 10px;
-      text-decoration: none;
-    }
-    .btn-green-inline {
-      display: inline-block;
-      background: #16bc35;
-      color: #fff;
-      font-family: 'Raleway', Arial, sans-serif;
-      font-weight: 700;
-      font-size: 20px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      padding: 14px 64px;
-      border-radius: 10px;
-      text-decoration: none;
-    }
-
+    .btn-green { display: block; background: #16bc35; color: #fff; font-family: 'Raleway', Arial, sans-serif; font-weight: 700; font-size: 20px; text-align: center; text-transform: uppercase; letter-spacing: 0.05em; padding: 16px 32px; border-radius: 10px; }
+    .btn-green-inline { display: inline-block; background: #16bc35; color: #fff; font-family: 'Raleway', Arial, sans-serif; font-weight: 700; font-size: 20px; text-transform: uppercase; letter-spacing: 0.05em; padding: 14px 64px; border-radius: 10px; }
     /* ── Benefits ── */
     .benefits-heading { background: #fff; padding: 48px 24px 0; }
     .benefits-heading .inner { max-width: 1140px; margin: 0 auto; text-align: center; }
-    .benefits-heading h2 { font-size: 24px; font-weight: 700; text-transform: none; }
-
+    .benefits-heading h2 { font-size: 24px; font-weight: 700; }
     .benefits-grid { background: #fff; padding: 24px 24px 0; }
-    .benefits-grid .inner {
-      max-width: 1140px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 32px;
-    }
+    .benefits-grid .inner { max-width: 1140px; margin: 0 auto; display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; }
     .benefit-item { display: flex; align-items: flex-start; gap: 20px; padding: 16px 0; }
     .benefit-item img { width: 140px; height: 140px; flex-shrink: 0; }
     .benefit-item .text { padding-top: 8px; }
     .benefit-item h3 { font-size: 24px; text-transform: uppercase; margin-bottom: 8px; }
     .benefit-item p { font-size: 14px; color: #666; line-height: 1.7; margin: 0; }
-
-    /* ── CTA button row ── */
     .cta-row { background: #fff; padding: 40px 24px 48px; text-align: center; }
 
     /* ── Footer ── */
     footer { background: #2b313c; border-top: 4px solid #16bc35; }
-    .footer-banner {
-      padding: 32px 24px;
-      text-align: center;
-      border-bottom: 1px solid #3b4251;
-    }
-    .footer-banner p {
-      font-family: 'Raleway', Arial, sans-serif;
-      font-weight: 700;
-      font-size: 18px;
-      color: #fff;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin: 0;
-      line-height: 1.5;
-    }
+    .footer-banner { padding: 32px 24px; text-align: center; border-bottom: 1px solid #3b4251; }
+    .footer-banner p { font-family: 'Raleway', Arial, sans-serif; font-weight: 700; font-size: 18px; color: #fff; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; line-height: 1.5; }
     .footer-inner { max-width: 1140px; margin: 0 auto; padding: 32px 24px; }
     .footer-legal { font-size: 9px; color: #888; line-height: 1.8; margin-bottom: 24px; }
     .footer-legal a { color: #16bc35; }
-    .footer-contacts {
-      display: flex;
-      gap: 48px;
-      flex-wrap: wrap;
-      margin-bottom: 24px;
-      padding-top: 16px;
-      border-top: 1px solid #3b4251;
-    }
-    .footer-contacts .label {
-      font-family: 'Raleway', Arial, sans-serif;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 4px;
-      font-size: 9px;
-    }
+    .footer-contacts { display: flex; gap: 48px; flex-wrap: wrap; margin-bottom: 24px; padding-top: 16px; border-top: 1px solid #3b4251; }
+    .footer-contacts .label { font-family: 'Raleway', Arial, sans-serif; font-weight: 700; color: #fff; margin-bottom: 4px; font-size: 9px; }
     .footer-contacts .label-lg { font-size: 14px; }
     .footer-contacts p { color: #888; font-size: 9px; margin: 0; }
     .footer-contacts a { color: #16bc35; font-size: 9px; }
-    .footer-copy {
-      border-top: 1px solid #3b4251;
-      padding-top: 20px;
-      text-align: center;
-      font-size: 12px;
-      color: #666;
-    }
+    .footer-copy { border-top: 1px solid #3b4251; padding-top: 20px; text-align: center; font-size: 12px; color: #666; }
     .footer-copy p { margin: 0 0 4px; }
     .footer-copy a { color: #16bc35; }
+
+    /* ════════════════════════════════════════════
+       CUSTOM FORM STYLES (scoped to #growform-wrapper)
+       ════════════════════════════════════════════ */
+    #growform-wrapper *{box-sizing:border-box;}
+    #growform-wrapper .gf-card{background:#101828;overflow:hidden;}
+    #growform-wrapper .gf-logo{display:flex;justify-content:center;align-items:center;padding:20px 21px 10px;background:#101828;}
+    #growform-wrapper .gf-logo img{height:44px;max-width:220px;object-fit:contain;}
+    #growform-wrapper .gf-prog-wrap{padding:0 21px;background:#101828;}
+    #growform-wrapper .gf-prog-track{height:6px;background:rgba(255,255,255,.15);border-radius:3px;overflow:hidden;margin-top:-22px;}
+    #growform-wrapper .gf-prog-fill{height:100%;background:#225bc0;border-radius:3px;transition:width .4s ease;}
+    #growform-wrapper .gf-step{display:none;padding:20px 100px 100px;}
+    #growform-wrapper .gf-step.active{display:block;}
+    #growform-wrapper .gf-complete{display:none;padding:40px 100px 60px;text-align:center;}
+    #growform-wrapper .gf-complete.active{display:block;}
+    #growform-wrapper .gf-h{font-family:'Open Sans',sans-serif;font-size:31px;font-weight:700;color:#fff;margin:30px 0;line-height:120%;text-align:center;}
+    #growform-wrapper .gf-h.sm{font-family:'Open Sans',sans-serif;font-size:31px;font-weight:700;color:#fff;margin:30px 0;line-height:120%;text-align:center;}
+    #growform-wrapper .gf-sub{font-size:17px;color:rgba(255,255,255,.75);margin-bottom:20px;line-height:1.5;}
+    /* Rectangle buttons */
+    #growform-wrapper .rt-wrap{display:grid;grid-template-columns:1fr 1fr;gap:25px;}
+    #growform-wrapper .rt-wrap.one-col{grid-template-columns:1fr;}
+    #growform-wrapper .rt-btn{background:#1d2939;border:2px solid #1d2939;border-radius:10px;padding:14px 20px;cursor:pointer;display:flex;flex-direction:row;align-items:center;gap:16px;font-family:'Poppins',sans-serif;font-size:21px;font-weight:500;color:rgb(254,254,254);line-height:120%;transition:all .2s;text-align:left;position:relative;width:100%;}
+    #growform-wrapper .rt-btn img{width:48px;height:48px;object-fit:contain;flex-shrink:0;}
+    #growform-wrapper .rt-btn:hover{border-color:#0ea9ff;background:#253347;}
+    #growform-wrapper .rt-btn.sel{background:#0ea9ff;border-color:#0ea9ff;}
+    #growform-wrapper .rt-ind{display:none;}
+    /* Square buttons */
+    #growform-wrapper .sq-wrap{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+    #growform-wrapper .sq-btn{background:#1d2939;border:2px solid #1d2939;border-radius:6px;padding:16px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;font-family:'Poppins',sans-serif;font-size:21px;font-weight:500;color:rgb(254,254,254);line-height:120%;transition:all .2s;text-align:center;position:relative;width:100%;}
+    #growform-wrapper .sq-btn img{width:66%;max-width:100px;height:auto;object-fit:contain;}
+    #growform-wrapper .sq-btn:hover{opacity:.85;}
+    #growform-wrapper .sq-btn.sel{border-color:#4583ff;box-shadow:0 0 0 2px #4583ff;}
+    #growform-wrapper .sq-ind{display:none;}
+    #growform-wrapper .gf-helper{font-size:13px;color:rgba(255,255,255,.6);text-align:center;margin:2px 0 14px;}
+    #growform-wrapper .gf-field{margin-bottom:16px;}
+    #growform-wrapper .gf-label{font-family:'Poppins',sans-serif;font-size:16px;color:#fff;margin-bottom:6px;display:block;font-weight:500;}
+    #growform-wrapper .gf-input{width:100%;padding:12px 14px;font-size:16px;font-family:'Open Sans',sans-serif;border:1px solid #ccc;border-radius:4px;background:#fff;color:#000;transition:border-color .2s;outline:none;}
+    #growform-wrapper .gf-input:focus{border-color:#0ea9ff;box-shadow:0 0 0 2px rgba(14,169,255,.2);}
+    #growform-wrapper textarea.gf-input{resize:vertical;min-height:120px;}
+    #growform-wrapper .gf-name-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    #growform-wrapper select.gf-input{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
+    #growform-wrapper .gf-phone-wrap{display:flex;border:1px solid #ccc;border-radius:4px;overflow:hidden;transition:border-color .2s;}
+    #growform-wrapper .gf-phone-wrap:focus-within{border-color:#0ea9ff;box-shadow:0 0 0 2px rgba(14,169,255,.2);}
+    #growform-wrapper .gf-phone-pre{padding:12px 10px;background:#f5f5f5;border-right:1px solid #ccc;font-size:14px;color:#555;display:flex;align-items:center;gap:4px;white-space:nowrap;}
+    #growform-wrapper .gf-phone-wrap input{border:none;flex:1;padding:12px 14px;font-size:16px;outline:none;font-family:'Open Sans',sans-serif;}
+    #growform-wrapper .gf-tos{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:rgba(255,255,255,.6);line-height:1.5;cursor:pointer;}
+    #growform-wrapper .gf-tos input[type="checkbox"]{margin-top:2px;width:16px;height:16px;flex-shrink:0;accent-color:#0ea9ff;}
+    #growform-wrapper .gf-tos a{color:#0ea9ff;}
+    #growform-wrapper .gf-nav{display:flex;gap:12px;margin-top:20px;}
+    #growform-wrapper .gf-back{background:transparent;border:2px solid rgba(255,255,255,.3);color:rgba(255,255,255,.7);font-family:'Abel',sans-serif;font-size:17px;padding:12px 24px;border-radius:4px;cursor:pointer;transition:all .2s;}
+    #growform-wrapper .gf-back:hover{border-color:rgba(255,255,255,.6);color:#fff;}
+    #growform-wrapper .gf-next{flex:1;background:#0ea9ff;color:#fff;border:none;font-family:'Abel',sans-serif;font-size:17px;padding:14px 24px;border-radius:4px;cursor:pointer;transition:background .2s;text-transform:uppercase;letter-spacing:.5px;}
+    #growform-wrapper .gf-next:hover{background:#0090e0;}
+    #growform-wrapper .gf-err{color:#ff6b6b;font-size:13px;margin-top:6px;display:none;}
+    #growform-wrapper .gf-err.show{display:block;}
+    @media(max-width:600px){
+      #growform-wrapper .gf-step{padding:20px 20px 30px;}
+      #growform-wrapper .gf-complete{padding:40px 20px 60px;}
+      #growform-wrapper .rt-wrap{grid-template-columns:1fr;gap:15px;}
+      #growform-wrapper .gf-name-row{grid-template-columns:1fr;}
+      #growform-wrapper .gf-h{font-size:24px;} #growform-wrapper .gf-h.sm{font-size:22px;}
+      #growform-wrapper .rt-btn{font-size:18px;} #growform-wrapper .sq-btn{font-size:17px;}
+    }
   </style>
 </head>
 <body>
@@ -211,13 +162,10 @@
   <!-- HERO -->
   <section class="hero">
     <div class="hero-logo">
-      <img src="public/logo-full.png" alt="Car Accident Help – Maximize Your Auto Accident Payout" />
+      <img src="public/logo-full.png" alt="Car Accident Help – Maximize Your Auto Accident Payout" width="220" height="66" fetchpriority="high">
     </div>
     <h1>Injured in an Accident?</h1>
-    <p>
-      Connect With <span class="accent">Top Car Accident Lawyers</span>
-      Who Fight to <strong style="text-decoration:underline">Maximize Your Payout</strong>
-    </p>
+    <p>Connect With <span class="accent">Top Car Accident Lawyers</span> Who Fight to <strong style="text-decoration:underline">Maximize Your Payout</strong></p>
   </section>
 
   <!-- FORM SECTION -->
@@ -228,25 +176,275 @@
         <p>Use our <strong>Free Compensation Calculator</strong> to See What You Qualify For</p>
       </div>
 
-      <div id="growform-wrapper"></div>
+      <!-- ══ CUSTOM FORM (replaces Growform iframe) ══ -->
+      <div id="growform-wrapper">
+      <div class="gf-card">
+        <div class="gf-prog-wrap">
+          <div class="gf-prog-track"><div class="gf-prog-fill" id="gfProgressBar" style="width:0%"></div></div>
+        </div>
+
+        <!-- STEP 1: Service Type -->
+        <div class="gf-step active" id="gf-step-1">
+          <h2 class="gf-h">What type of accident?</h2>
+          <div class="rt-wrap">
+            <button class="rt-btn" data-value="car_accident" onclick="gfPickRt(this,'serviceType')">
+              <span class="rt-ind"></span>
+              <img src="https://res.cloudinary.com/dqnjggegp/image/upload/v1745617533/uploads/wgu06pexmrztdui4afct.png" alt="Car Accident" width="48" height="48">Car Accident
+            </button>
+            <button class="rt-btn" data-value="motorcycle_accident" onclick="gfPickRt(this,'serviceType')">
+              <span class="rt-ind"></span>
+              <img src="https://res.cloudinary.com/dqnjggegp/image/upload/v1741652009/uploads/qdhseno1gshf5nrrfjtd.png" alt="Motorcycle Accident" width="48" height="48">Motorcycle Accident
+            </button>
+            <button class="rt-btn" data-value="trucking_accident" onclick="gfPickRt(this,'serviceType')">
+              <span class="rt-ind"></span>
+              <img src="https://res.cloudinary.com/dqnjggegp/image/upload/v1741652067/uploads/qh4caqfgi4hi2cds0gys.png" alt="Trucking Accident" width="48" height="48">Trucking Accident
+            </button>
+            <button class="rt-btn" data-value="bicycle_accident" onclick="gfPickRt(this,'serviceType')">
+              <span class="rt-ind"></span>
+              <img src="https://res.cloudinary.com/dqnjggegp/image/upload/v1741651944/uploads/ppnamg5ex8yrnaibiyly.png" alt="Bicycle Accident" width="48" height="48">Bicycle or E-bike Accident
+            </button>
+            <button class="rt-btn" data-value="work_accident" onclick="gfPickRt(this,'serviceType')">
+              <span class="rt-ind"></span>
+              <img src="https://res.cloudinary.com/dqnjggegp/image/upload/v1741639090/uploads/bsq23vc11ngyecpvleo6.png" alt="Work Accident" width="48" height="48">Accident or Injury at Work
+            </button>
+            <button class="rt-btn" data-value="pedestrian_accident" onclick="gfPickRt(this,'serviceType')">
+              <span class="rt-ind"></span>
+              <img src="https://res.cloudinary.com/dqnjggegp/image/upload/v1741652033/uploads/nqxtvuo9fs9pmdfbpbmj.png" alt="Pedestrian Accident" width="48" height="48">Pedestrian Accident
+            </button>
+            <button class="rt-btn" data-value="other_accident" onclick="gfPickRt(this,'serviceType')">
+              <span class="rt-ind"></span>
+              <img src="https://res.cloudinary.com/dqnjggegp/image/upload/v1741652233/uploads/cifeuqfgxcgvffsj4ip9.png" alt="Other Accident" width="48" height="48">Other Accident
+            </button>
+          </div>
+          <div class="gf-err" id="gf-err-1">Please select an option to continue.</div>
+        </div>
+        <!-- STEP 2: Attorney -->
+        <div class="gf-step" id="gf-step-2">
+          <h2 class="gf-h">Have you ever worked with an attorney for this accident?</h2>
+          <div class="sq-wrap">
+            <button class="sq-btn" data-value="not_yet" onclick="gfPickSq(this,'attorney')">
+              <span class="sq-ind"></span>
+              <img src="https://res.cloudinary.com/dqnjggegp/image/upload/v1745597547/uploads/ikvygtiyxr7e99mjl0yo.png" alt="Not Yet" width="66" height="66">Not Yet
+            </button>
+            <button class="sq-btn" data-value="has_attorney" onclick="gfPickSq(this,'attorney')">
+              <span class="sq-ind"></span>
+              <img src="https://res.cloudinary.com/dqnjggegp/image/upload/v1745281414/uploads/ec5qlo5n3rbjdgarbzgc.png" alt="I Have An Attorney" width="66" height="66">I Have An Attorney
+            </button>
+          </div>
+          <p class="gf-helper">If Unsure: Select "Not Yet"</p>
+          <div class="gf-err" id="gf-err-2">Please select an option to continue.</div>
+          <div class="gf-nav"><button class="gf-back" onclick="gfPrev()">BACK</button></div>
+        </div>
+
+        <!-- STEP 3: Fault -->
+        <div class="gf-step" id="gf-step-3">
+          <h2 class="gf-h">Was the accident your fault?</h2>
+          <div class="sq-wrap">
+            <button class="sq-btn" data-value="no" onclick="gfPickSq(this,'fault')">
+              <span class="sq-ind"></span>
+              <img src="https://res.cloudinary.com/dqnjggegp/image/upload/v1745597625/uploads/dkxgckb2fi46si0afyiw.png" alt="No" width="66" height="66">No
+            </button>
+            <button class="sq-btn" data-value="yes" onclick="gfPickSq(this,'fault')">
+              <span class="sq-ind"></span>
+              <img src="https://res.cloudinary.com/dqnjggegp/image/upload/v1745279973/uploads/zvle3k42p3twuixc2sk7.png" alt="Yes" width="66" height="66">Yes
+            </button>
+          </div>
+          <p class="gf-helper">If Unsure: Select "No"</p>
+          <div class="gf-err" id="gf-err-3">Please select an option to continue.</div>
+          <div class="gf-nav"><button class="gf-back" onclick="gfPrev()">BACK</button></div>
+        </div>
+        <!-- STEP 4: Injury -->
+        <div class="gf-step" id="gf-step-4">
+          <h2 class="gf-h">Did you suffer any injury in the accident?</h2>
+          <div class="sq-wrap">
+            <button class="sq-btn" data-value="yes" onclick="gfPickSq(this,'injury')">
+              <span class="sq-ind"></span>
+              <img src="https://res.cloudinary.com/dqnjggegp/image/upload/v1745885697/uploads/njqsohnifjmtnpui5mx7.png" alt="Yes" width="66" height="66">Yes
+            </button>
+            <button class="sq-btn" data-value="no" onclick="gfPickSq(this,'injury')">
+              <span class="sq-ind"></span>
+              <img src="https://res.cloudinary.com/dqnjggegp/image/upload/v1745597950/uploads/i325zocmoxuiquwh1i4f.png" alt="No" width="66" height="66">No
+            </button>
+          </div>
+          <div class="gf-err" id="gf-err-4">Please select an option to continue.</div>
+          <div class="gf-nav"><button class="gf-back" onclick="gfPrev()">BACK</button></div>
+        </div>
+
+        <!-- STEP 5: When Accident Happened -->
+        <div class="gf-step" id="gf-step-5">
+          <h2 class="gf-h">When did this accident happen?</h2>
+          <p class="gf-sub">The more recent your accident, the more likely you can achieve a higher settlement. If you've been in an accident, don't delay in getting help.</p>
+          <div class="rt-wrap one-col">
+            <button class="rt-btn" data-value="within_1_week" onclick="gfPickRt(this,'accidentHappen')"><span class="rt-ind"></span>Within 1 Week</button>
+            <button class="rt-btn" data-value="within_1_3_months" onclick="gfPickRt(this,'accidentHappen')"><span class="rt-ind"></span>Within 1-3 months</button>
+            <button class="rt-btn" data-value="within_4_6_months" onclick="gfPickRt(this,'accidentHappen')"><span class="rt-ind"></span>Within 4-6 months</button>
+            <button class="rt-btn" data-value="within_1_year" onclick="gfPickRt(this,'accidentHappen')"><span class="rt-ind"></span>Within 1 Year</button>
+            <button class="rt-btn" data-value="within_2_year" onclick="gfPickRt(this,'accidentHappen')"><span class="rt-ind"></span>Within 2 Year</button>
+            <button class="rt-btn" data-value="longer_than_2_year" onclick="gfPickRt(this,'accidentHappen')"><span class="rt-ind"></span>Longer than 2 Year</button>
+          </div>
+          <div class="gf-err" id="gf-err-5">Please select an option to continue.</div>
+          <div class="gf-nav"><button class="gf-back" onclick="gfPrev()">BACK</button></div>
+        </div>
+        <!-- STEP 6: State (hidden if utm_state=arizona) -->
+        <div class="gf-step" id="gf-step-6">
+          <h2 class="gf-h sm">Which state did the accident occur in?</h2>
+          <div class="gf-field">
+            <label class="gf-label">State</label>
+            <select class="gf-input" id="gfStateSelect" onchange="gfd.state=this.value;gfd.stateText=this.options[this.selectedIndex].text;">
+              <option value="">Select your state...</option>
+              <option value="alabama">Alabama</option><option value="alaska">Alaska</option>
+              <option value="arizona">Arizona</option><option value="arkansas">Arkansas</option>
+              <option value="california">California</option><option value="colorado">Colorado</option>
+              <option value="connecticut">Connecticut</option><option value="delaware">Delaware</option>
+              <option value="florida">Florida</option><option value="georgia">Georgia</option>
+              <option value="hawaii">Hawaii</option><option value="idaho">Idaho</option>
+              <option value="illinois">Illinois</option><option value="indiana">Indiana</option>
+              <option value="iowa">Iowa</option><option value="kansas">Kansas</option>
+              <option value="kentucky">Kentucky</option><option value="louisiana">Louisiana</option>
+              <option value="maine">Maine</option><option value="maryland">Maryland</option>
+              <option value="massachusetts">Massachusetts</option><option value="michigan">Michigan</option>
+              <option value="minnesota">Minnesota</option><option value="mississippi">Mississippi</option>
+              <option value="missouri">Missouri</option><option value="montana">Montana</option>
+              <option value="nebraska">Nebraska</option><option value="nevada">Nevada</option>
+              <option value="new_hampshire">New Hampshire</option><option value="new_jersey">New Jersey</option>
+              <option value="new_mexico">New Mexico</option><option value="new_york">New York</option>
+              <option value="north_carolina">North Carolina</option><option value="north_dakota">North Dakota</option>
+              <option value="ohio">Ohio</option><option value="oklahoma">Oklahoma</option>
+              <option value="oregon">Oregon</option><option value="pennsylvania">Pennsylvania</option>
+              <option value="rhode_island">Rhode Island</option><option value="south_carolina">South Carolina</option>
+              <option value="south_dakota">South Dakota</option><option value="tennessee">Tennessee</option>
+              <option value="texas">Texas</option><option value="utah">Utah</option>
+              <option value="vermont">Vermont</option><option value="virginia">Virginia</option>
+              <option value="washington">Washington</option><option value="west_virginia">West Virginia</option>
+              <option value="wisconsin">Wisconsin</option><option value="wyoming">Wyoming</option>
+            </select>
+            <div class="gf-err" id="gf-err-6">Please select your state.</div>
+          </div>
+          <div class="gf-nav">
+            <button class="gf-back" onclick="gfPrev()">BACK</button>
+            <button class="gf-next" onclick="gfNext()">NEXT</button>
+          </div>
+        </div>
+        <!-- STEP 7: Zip Code -->
+        <div class="gf-step" id="gf-step-7">
+          <h2 class="gf-h sm">What's your zip code?</h2>
+          <div class="gf-field">
+            <label class="gf-label">What is your zip code?</label>
+            <input type="text" class="gf-input" id="gfZip" placeholder="Enter zip code" maxlength="5"
+                   inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'');gfd.zipcode=this.value;">
+            <div class="gf-err" id="gf-err-7">Please enter a valid 5-digit zip code.</div>
+          </div>
+          <div class="gf-nav">
+            <button class="gf-back" onclick="gfPrev()">BACK</button>
+            <button class="gf-next" onclick="gfNext()">NEXT</button>
+          </div>
+        </div>
+
+        <!-- STEP 8: Insured (CA or AZ only) -->
+        <div class="gf-step" id="gf-step-8">
+          <h2 class="gf-h">Were you insured at the time of the accident?</h2>
+          <div class="sq-wrap">
+            <button class="sq-btn" data-value="yes" onclick="gfPickSq(this,'insured')">
+              <span class="sq-ind"></span>
+              <img src="https://res.cloudinary.com/dqnjggegp/image/upload/v1745597625/uploads/dkxgckb2fi46si0afyiw.png" alt="Yes">Yes
+            </button>
+            <button class="sq-btn" data-value="no" onclick="gfPickSq(this,'insured')">
+              <span class="sq-ind"></span>
+              <img src="https://res.cloudinary.com/dqnjggegp/image/upload/v1745279973/uploads/zvle3k42p3twuixc2sk7.png" alt="No">No
+            </button>
+          </div>
+          <div class="gf-nav"><button class="gf-back" onclick="gfPrev()">BACK</button></div>
+        </div>
+
+        <!-- STEP 9: Describe -->
+        <div class="gf-step" id="gf-step-9">
+          <h2 class="gf-h sm">Briefly describe your accident to us.</h2>
+          <div class="gf-field">
+            <label class="gf-label">Briefly describe your accident to us.</label>
+            <textarea class="gf-input" id="gfDescribe" rows="5" placeholder="Describe what happened..." oninput="gfd.describe=this.value;"></textarea>
+            <div class="gf-err" id="gf-err-9">Please describe your accident to continue.</div>
+          </div>
+          <div class="gf-nav">
+            <button class="gf-back" onclick="gfPrev()">BACK</button>
+            <button class="gf-next" onclick="gfNext()">NEXT</button>
+          </div>
+        </div>
+        <!-- STEP 10: Name -->
+        <div class="gf-step" id="gf-step-10">
+          <h2 class="gf-h sm">What's your name?</h2>
+          <div class="gf-name-row">
+            <div class="gf-field">
+              <label class="gf-label">First name</label>
+              <input type="text" class="gf-input" id="gfFirstName" placeholder="First name" oninput="gfd.firstName=this.value;">
+              <div class="gf-err" id="gf-err-10a">Please enter your first name.</div>
+            </div>
+            <div class="gf-field">
+              <label class="gf-label">Last name</label>
+              <input type="text" class="gf-input" id="gfLastName" placeholder="Last name" oninput="gfd.lastName=this.value;">
+              <div class="gf-err" id="gf-err-10b">Please enter your last name.</div>
+            </div>
+          </div>
+          <div class="gf-nav">
+            <button class="gf-back" onclick="gfPrev()">BACK</button>
+            <button class="gf-next" onclick="gfNext()">NEXT</button>
+          </div>
+        </div>
+
+        <!-- STEP 11: Email -->
+        <div class="gf-step" id="gf-step-11">
+          <h2 class="gf-h sm">Final step. What are your basic contact details?</h2>
+          <div class="gf-field">
+            <label class="gf-label">What is your email address?</label>
+            <input type="email" class="gf-input" id="gfEmail" placeholder="your@email.com" oninput="gfd.email=this.value;">
+            <div class="gf-err" id="gf-err-11">Please enter a valid email address.</div>
+          </div>
+          <div class="gf-nav">
+            <button class="gf-back" onclick="gfPrev()">BACK</button>
+            <button class="gf-next" onclick="gfNext()">NEXT</button>
+          </div>
+        </div>
+        <!-- STEP 12: Phone + TOS -->
+        <div class="gf-step" id="gf-step-12">
+          <h2 class="gf-h sm">Final step. What are your basic contact details?</h2>
+          <div class="gf-field">
+            <label class="gf-label">What is your phone number?</label>
+            <div class="gf-phone-wrap">
+              <span class="gf-phone-pre">🇺🇸 +1</span>
+              <input type="tel" id="gfPhone" placeholder="(555) 000-0000" maxlength="14"
+                     oninput="gfFmtPhone(this);gfd.phone=this.value;">
+            </div>
+            <div class="gf-err" id="gf-err-12a">Please enter a valid 10-digit phone number.</div>
+          </div>
+          <div class="gf-field" style="margin-top:14px;">
+            <label class="gf-tos">
+              <input type="checkbox" id="gfTos" onchange="gfd.agree=this.checked;">
+              <span>By clicking "Submit", you agree that Triggerfish Leads, LLC (DBA Car Accident Help) may contact you at the number provided regarding your inquiry via automated text messages. Consent is not a condition of purchase. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. View our <a href="https://caraccidenthelp.net/privacy-policy/" target="_blank">Privacy Policy</a> and <a href="https://caraccidenthelp.net/terms/" target="_blank">Terms of Use</a>.</span>
+            </label>
+            <div class="gf-err" id="gf-err-12b">You must agree to the terms to submit.</div>
+          </div>
+          <div class="gf-nav">
+            <button class="gf-back" onclick="gfPrev()">BACK</button>
+            <button class="gf-next" onclick="gfSubmit()">SUBMIT</button>
+          </div>
+        </div>
+
+        <!-- COMPLETE -->
+        <div class="gf-complete" id="gf-complete">
+          <h2 class="gf-h" style="margin-bottom:20px;">Thanks for your enquiry!</h2>
+          <p style="font-size:17px;color:rgba(255,255,255,.7);">Thanks for getting in touch. We'll be in contact soon with more information about timelines and availability.</p>
+        </div>
+
+      </div><!-- /gf-card -->
+      </div><!-- /growform-wrapper -->
+      <!-- ══ END CUSTOM FORM ══ -->
 
       <div class="form-card-bottom"></div>
-
       <div class="three-col">
-        <div class="col-car">
-          <img src="public/accident-car.webp" alt="Car accident scene" />
-        </div>
+        <div class="col-car"><img src="public/accident-car.webp" alt="Car accident scene" width="300" height="225" loading="lazy"></div>
         <div class="col-spacer"></div>
         <div class="col-text">
-          <h2>
-            Try Our Compensation <span class="accent">Calculator</span> And See How
-            Much You Could Get For Compensation
-          </h2>
-          <p>
-            Our car accident lawyers <em>use</em> this Compensation Calculator to get a clear idea of
-            how much our clients could be entitled for compensation for their accidents.
-            Try it today for <strong style="color:#3b4251">free</strong>, and get an answer within minutes!
-          </p>
+          <h2>Try Our Compensation <span class="accent">Calculator</span> And See How Much You Could Get For Compensation</h2>
+          <p>Our car accident lawyers <em>use</em> this Compensation Calculator to get a clear idea of how much our clients could be entitled for compensation for their accidents. Try it today for <strong style="color:#3b4251">free</strong>, and get an answer within minutes!</p>
           <a href="#form-section" class="btn-green">See If You Qualify</a>
         </div>
       </div>
@@ -257,49 +455,29 @@
   <!-- BENEFITS HEADING -->
   <section class="benefits-heading">
     <div class="inner">
-      <h2>
-        Our Car Accident Lawyers Can Help <span style="text-decoration:underline">You</span>
-        Get Compensation For&hellip;
-      </h2>
+      <h2>Our Car Accident Lawyers Can Help <span style="text-decoration:underline">You</span> Get Compensation For…</h2>
     </div>
   </section>
 
   <!-- BENEFITS GRID -->
   <section class="benefits-grid">
     <div class="inner">
-
       <div class="benefit-item">
-        <img src="public/icon-medical.webp" alt="Medical Expenses" />
-        <div class="text">
-          <h3>Medical Expenses</h3>
-          <p>Covers treatment costs related to accident injuries.</p>
-        </div>
+        <img src="public/icon-medical.webp" alt="Medical Expenses" width="140" height="140" loading="lazy">
+        <div class="text"><h3>Medical Expenses</h3><p>Covers treatment costs related to accident injuries.</p></div>
       </div>
-
       <div class="benefit-item">
-        <img src="public/icon-wages.webp" alt="Lost Wages" />
-        <div class="text">
-          <h3>Lost Wages</h3>
-          <p>You may be compensated if your injuries affected your ability to work.</p>
-        </div>
+        <img src="public/icon-wages.webp" alt="Lost Wages" width="140" height="140" loading="lazy">
+        <div class="text"><h3>Lost Wages</h3><p>You may be compensated if your injuries affected your ability to work.</p></div>
       </div>
-
       <div class="benefit-item">
-        <img src="public/icon-vehicle.webp" alt="Vehicle Damage" />
-        <div class="text">
-          <h3>Vehicle Damage</h3>
-          <p>Helps cover repairs or replacement of your vehicle.</p>
-        </div>
+        <img src="public/icon-vehicle.webp" alt="Vehicle Damage" width="140" height="140" loading="lazy">
+        <div class="text"><h3>Vehicle Damage</h3><p>Helps cover repairs or replacement of your vehicle.</p></div>
       </div>
-
       <div class="benefit-item">
-        <img src="public/icon-pain.webp" alt="Pain &amp; Suffering" />
-        <div class="text">
-          <h3>Pain &amp; Suffering</h3>
-          <p>May include physical or emotional distress caused by the car accident.</p>
-        </div>
+        <img src="public/icon-pain.webp" alt="Pain &amp; Suffering" width="140" height="140" loading="lazy">
+        <div class="text"><h3>Pain &amp; Suffering</h3><p>May include physical or emotional distress caused by the car accident.</p></div>
       </div>
-
     </div>
   </section>
 
@@ -307,76 +485,219 @@
   <section class="cta-row">
     <a href="#form-section" class="btn-green-inline">See If You Qualify</a>
   </section>
-
   <!-- FOOTER -->
   <footer>
     <div class="footer-banner">
-      <p>Don't Wait &ndash; Get The Help You Deserve Today. It's Fast and Easy to Start.</p>
+      <p>Don't Wait – Get The Help You Deserve Today. It's Fast and Easy to Start.</p>
     </div>
     <div class="footer-inner">
-
       <p class="footer-legal">
         Advertising paid for by participating attorneys in a joint advertising program,
         including West Coast Trial Lawyers, licensed to practice law in California.
         A complete list of joint advertising attorneys can be found at
         <a href="https://www.caraccidenthelp.net/sponsors/">https://www.caraccidenthelp.net/sponsors/</a>.
         You can request an attorney by name. CarAccidenthelp.net is not a law firm or an attorney
-        referral service. This advertisement is not legal advice and is not a guarantee or
-        prediction of the outcome of your legal matter. Every case is different. The outcome
-        depends on the laws, facts, and circumstances unique to each case. Hiring an attorney
-        is an important decision that should not be based solely on advertising. Request free
-        information about your attorney's background and experience. This advertising does not
-        imply a higher quality of legal services than that provided by other attorneys. We do
-        not provide legal advice or legal representation. No attorney-client relationship is
-        formed by contacting us.
+        referral service. This advertisement is not legal advice and is not a guarantee or prediction
+        of the outcome of your legal matter. Every case is different. The outcome depends on the laws,
+        facts, and circumstances unique to each case. Hiring an attorney is an important decision that
+        should not be based solely on advertising. Request free information about your attorney's
+        background and experience. This advertising does not imply a higher quality of legal services
+        than that provided by other attorneys. We do not provide legal advice or legal representation.
+        No attorney-client relationship is formed by contacting us.
       </p>
-
       <div class="footer-contacts">
-        <div>
-          <p class="label">Address:</p>
-          <p>6119 Greenville #424, Dallas, TX 75206</p>
-        </div>
-        <div>
-          <p class="label label-lg">Phone:</p>
-          <a href="tel:+12543584941">+1 254-358-4941</a>
-        </div>
-        <div>
-          <p class="label label-lg">Email:</p>
-          <a href="mailto:support@caraccidenthelp.net">support@caraccidenthelp.net</a>
-        </div>
+        <div><p class="label">Address:</p><p>6119 Greenville #424, Dallas, TX 75206</p></div>
+        <div><p class="label label-lg">Phone:</p><a href="tel:+12543584941">+1 254-358-4941</a></div>
+        <div><p class="label label-lg">Email:</p><a href="mailto:support@caraccidenthelp.net">support@caraccidenthelp.net</a></div>
       </div>
-
       <div class="footer-copy">
         <p>Car Accident Help is a brand owned and operated by Triggerfish Leads, LLC.</p>
-        <p>
-          &copy; 2012&ndash;2026 &nbsp;CarAccidentHelp.net &nbsp;&mdash;&nbsp;
-          All Rights Reserved &nbsp;&mdash;&nbsp; Get the Compensation You Deserve Today &nbsp;&mdash;&nbsp;
-          <a href="https://saddlebrown-nightingale-345621.hostingersite.com/terms/">Terms &amp; Conditions.</a>
-          &nbsp;
+        <p>© 2012–2026 &nbsp;CarAccidentHelp.net &nbsp;—&nbsp; All Rights Reserved &nbsp;—&nbsp; Get the Compensation You Deserve Today &nbsp;—&nbsp;
+          <a href="https://saddlebrown-nightingale-345621.hostingersite.com/terms/">Terms &amp; Conditions.</a> &nbsp;
           <a href="https://saddlebrown-nightingale-345621.hostingersite.com/privacy-policy/">Privacy Policy</a>
-          &nbsp;&mdash;&nbsp; Created by <a href="https://carlosaragon.online">Carlos Aragon</a>
+          &nbsp;—&nbsp; Created by <a href="https://carlosaragon.online">Carlos Aragon</a>
         </p>
       </div>
-
     </div>
   </footer>
 
-  <script>
-    (function () {
-      var wrapper = document.getElementById('growform-wrapper');
-      if (!wrapper) return;
-      var observer = new IntersectionObserver(function (entries) {
-        if (entries[0].isIntersecting) {
-          var script = document.createElement('script');
-          script.type = 'text/javascript';
-          script.src = 'https://embed.growform.co/client/67cf74bca2ec54000b491be6';
-          wrapper.appendChild(script);
-          observer.disconnect();
-        }
-      }, { rootMargin: '300px' });
-      observer.observe(wrapper);
-    })();
-  </script>
+<script>
+// ── Form state ──────────────────────────────────────────────
+var gfd = {
+  serviceType:'', attorney:'', fault:'', injury:'', accidentHappen:'',
+  state:'', stateText:'', zipcode:'', insured:'', describe:'',
+  firstName:'', lastName:'', email:'', phone:'', agree:false
+};
 
-</body>
-</html>
+var gfCurStep = 1;
+var TOTAL_STEPS = 12;
+
+// Steps that are conditional (shown only sometimes)
+// Step 8 (insured) shown only for california or arizona
+function gfIsStep8Applicable() {
+  return gfd.state === 'california' || gfd.state === 'arizona';
+}
+
+// Step 6 (state) hidden if utm_state=arizona in URL
+function gfSkipStateStep() {
+  var params = new URLSearchParams(window.location.search);
+  return params.get('utm_state') === 'arizona';
+}
+
+// ── Progress bar ─────────────────────────────────────────────
+function gfUpdateProgress() {
+  var pct = Math.round(((gfCurStep - 1) / TOTAL_STEPS) * 100);
+  document.getElementById('gfProgressBar').style.width = pct + '%';
+}
+
+// ── Show a step ───────────────────────────────────────────────
+function gfShowStep(n) {
+  document.querySelectorAll('.gf-step').forEach(function(el){ el.classList.remove('active'); });
+  var el = document.getElementById('gf-step-' + n);
+  if (el) el.classList.add('active');
+  gfCurStep = n;
+  gfUpdateProgress();
+}
+
+// ── Radio-type button pick (rt-btn) — auto-advance ───────────
+function gfPickRt(btn, field) {
+  var wrap = btn.closest('.rt-wrap');
+  wrap.querySelectorAll('.rt-btn').forEach(function(b){ b.classList.remove('sel'); });
+  btn.classList.add('sel');
+  gfd[field] = btn.getAttribute('data-value');
+  // hide error
+  var errEl = btn.closest('.gf-step').querySelector('.gf-err');
+  if (errEl) errEl.style.display = 'none';
+  // auto-advance after brief delay so user sees selection
+  setTimeout(function(){ gfAdvance(); }, 300);
+}
+
+// ── Square button pick (sq-btn) — auto-advance ───────────────
+function gfPickSq(btn, field) {
+  var wrap = btn.closest('.sq-wrap');
+  wrap.querySelectorAll('.sq-btn').forEach(function(b){ b.classList.remove('sel'); });
+  btn.classList.add('sel');
+  gfd[field] = btn.getAttribute('data-value');
+  var errEl = btn.closest('.gf-step').querySelector('.gf-err');
+  if (errEl) errEl.style.display = 'none';
+  setTimeout(function(){ gfAdvance(); }, 300);
+}
+
+// ── Validate current step ─────────────────────────────────────
+function gfValidate(step) {
+  function showErr(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'block';
+  }
+  if (step === 1) { if (!gfd.serviceType) { showErr('gf-err-1'); return false; } }
+  if (step === 2) { if (!gfd.attorney)    { showErr('gf-err-2'); return false; } }
+  if (step === 3) { if (!gfd.fault)       { showErr('gf-err-3'); return false; } }
+  if (step === 4) { if (!gfd.injury)      { showErr('gf-err-4'); return false; } }
+  if (step === 5) { if (!gfd.accidentHappen) { showErr('gf-err-5'); return false; } }
+  if (step === 6) { if (!gfd.state)       { showErr('gf-err-6'); return false; } }
+  if (step === 7) { if (!gfd.zipcode || gfd.zipcode.length !== 5) { showErr('gf-err-7'); return false; } }
+  if (step === 9) { if (!gfd.describe || gfd.describe.trim().length < 5) { showErr('gf-err-9'); return false; } }
+  if (step === 10) {
+    var ok = true;
+    if (!gfd.firstName || !gfd.firstName.trim()) { showErr('gf-err-10a'); ok = false; }
+    if (!gfd.lastName  || !gfd.lastName.trim())  { showErr('gf-err-10b'); ok = false; }
+    if (!ok) return false;
+  }
+  if (step === 11) {
+    var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!re.test(gfd.email)) { showErr('gf-err-11'); return false; }
+  }
+  return true;
+}
+
+// ── Get next step number, skipping conditionals ───────────────
+function gfNextStepNum(cur) {
+  var next = cur + 1;
+  // Skip step 6 (state) if utm_state=arizona
+  if (next === 6 && gfSkipStateStep()) {
+    gfd.state = 'arizona';
+    gfd.stateText = 'Arizona';
+    next = 7;
+  }
+  // Skip step 8 (insured) unless CA or AZ
+  if (next === 8 && !gfIsStep8Applicable()) {
+    next = 9;
+  }
+  return next;
+}
+
+function gfPrevStepNum(cur) {
+  var prev = cur - 1;
+  if (prev === 8 && !gfIsStep8Applicable()) prev = 7;
+  if (prev === 6 && gfSkipStateStep()) prev = 5;
+  if (prev < 1) prev = 1;
+  return prev;
+}
+
+// ── Advance (called after auto-pick or NEXT button) ───────────
+function gfAdvance() {
+  if (!gfValidate(gfCurStep)) return;
+  var next = gfNextStepNum(gfCurStep);
+  if (next > TOTAL_STEPS) { gfSubmit(); return; }
+  gfShowStep(next);
+}
+
+function gfNext() { gfAdvance(); }
+
+function gfPrev() {
+  var prev = gfPrevStepNum(gfCurStep);
+  gfShowStep(prev);
+}
+
+// ── Phone formatter ───────────────────────────────────────────
+function gfFmtPhone(input) {
+  var v = input.value.replace(/\D/g, '').slice(0, 10);
+  if (v.length >= 7)      v = '(' + v.slice(0,3) + ') ' + v.slice(3,6) + '-' + v.slice(6);
+  else if (v.length >= 4) v = '(' + v.slice(0,3) + ') ' + v.slice(3);
+  else if (v.length >= 1) v = '(' + v;
+  input.value = v;
+}
+
+// ── Submit ─────────────────────────────────────────────────────
+function gfSubmit() {
+  // Validate step 12
+  var phoneDigits = gfd.phone.replace(/\D/g,'');
+  var ok = true;
+  if (phoneDigits.length !== 10) {
+    var e = document.getElementById('gf-err-12a');
+    if (e) e.style.display = 'block';
+    ok = false;
+  }
+  if (!gfd.agree) {
+    var e2 = document.getElementById('gf-err-12b');
+    if (e2) e2.style.display = 'block';
+    ok = false;
+  }
+  if (!ok) return;
+
+  // Show complete screen
+  document.querySelectorAll('.gf-step').forEach(function(el){ el.classList.remove('active'); });
+  document.getElementById('gf-complete').classList.add('active');
+  document.getElementById('gfProgressBar').style.width = '100%';
+
+  // Fire GA4 event
+  if (typeof gtag === 'function') {
+    gtag('event', 'form_submit', { service_type: gfd.serviceType, state: gfd.state });
+  }
+}
+
+// ── Init: pre-fill state from URL if utm_state set ───────────
+(function(){
+  if (gfSkipStateStep()) {
+    gfd.state = 'arizona';
+    gfd.stateText = 'Arizona';
+  }
+  gfUpdateProgress();
+})();
+</script>
+
+<!-- TrustedForm — deferred, non-render-blocking -->
+<script defer>
+(function(){var field='xxTrustedFormCertUrl';var tf=document.createElement('script');tf.type='text/javascript';tf.async=true;tf.src='https://api.trustedform.com/trustedform.js?provide_referrer=false&field='+encodeURIComponent(field)+'&l='+new Date().getTime();document.body.appendChild(tf);})();
+</script>
+</body></html>
