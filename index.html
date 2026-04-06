@@ -670,6 +670,17 @@ var GF_STEP_META = {
 
 var gfFormCompleted = false;
 
+// ── Read all UTM params once on load ─────────────────────────
+var gfUtms = (function() {
+  var p = new URLSearchParams(window.location.search);
+  var keys = ['utm_source','utm_medium','utm_term','utm_campaign','utm_adsetname',
+               'utm_adname','utm_campaignid','utm_adsetid','utm_adid',
+               'utm_placement','utm_sitesourcename','utm_creative','utm_state','clickid'];
+  var out = {};
+  keys.forEach(function(k){ out[k] = p.get(k) || ''; });
+  return out;
+})();
+
 function gfClientVars() {
   return {
     'dlv - email':             gfd.email,
@@ -678,7 +689,21 @@ function gfClientVars() {
     'Growform State':          gfd.stateText ? gfd.stateText.toLowerCase() : '',
     'dl-zipcode':              gfd.zipcode,
     'dlv - form_step_number':  gfCurStep,
-    'dlv - form_step_name':    GF_STEP_META[gfCurStep] ? GF_STEP_META[gfCurStep].name : ''
+    'dlv - form_step_name':    GF_STEP_META[gfCurStep] ? GF_STEP_META[gfCurStep].name : '',
+    'utm_source':              gfUtms.utm_source,
+    'utm_medium':              gfUtms.utm_medium,
+    'utm_term':                gfUtms.utm_term,
+    'utm_campaign':            gfUtms.utm_campaign,
+    'utm_adsetname':           gfUtms.utm_adsetname,
+    'utm_adname':              gfUtms.utm_adname,
+    'utm_campaignid':          gfUtms.utm_campaignid,
+    'utm_adsetid':             gfUtms.utm_adsetid,
+    'utm_adid':                gfUtms.utm_adid,
+    'utm_placement':           gfUtms.utm_placement,
+    'utm_sitesourcename':      gfUtms.utm_sitesourcename,
+    'utm_creative':            gfUtms.utm_creative,
+    'utm_state':               gfUtms.utm_state,
+    'clickid':                 gfUtms.clickid
   };
 }
 
@@ -747,7 +772,6 @@ var GF_LABELS = {
 
 // ── Build Make.com webhook payload ────────────────────────────
 function gfBuildPayload() {
-  var p   = new URLSearchParams(window.location.search);
   var tfEl = document.querySelector('input[name="xxTrustedFormCertUrl"]') || document.querySelector('[name="xxTrustedFormCertUrl"]');
   var tf  = (tfEl && tfEl.value) ? tfEl.value : (window.tf_token || '');
   var eid = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
@@ -776,18 +800,21 @@ function gfBuildPayload() {
         phone_400747347981930:            { type:'Phone',         label:'What is your phone number?',           step:'1d50fdecb868a4b4b6fa9ead', value: gfd.phone.replace(/\D/g,'') },
         toscheckbox_687262995170288:      { type:'TOSCheckbox',   label:'TOS',                                  step:'1d50fdecb868a4b4b6fa9ead', value: 'true' },
         // UTM / hidden fields from URL params
-        hidden_978002841632858:           { type:'Hidden', step:'acd45227cac332d443c4e1db', value: p.get('utm_source')    || '' },
-        hidden_953875108661844:           { type:'Hidden', step:'acd45227cac332d443c4e1db', value: p.get('utm_medium')    || '' },
-        hidden_25865364589303:            { type:'Hidden', step:'acd45227cac332d443c4e1db', value: p.get('utm_term')      || '' },
-        hidden_337672242598594:           { type:'Hidden', step:'acd45227cac332d443c4e1db', value: p.get('utm_content')   || '' },
+        hidden_978002841632858:           { type:'Hidden', step:'acd45227cac332d443c4e1db', value: gfUtms.utm_source },
+        hidden_953875108661844:           { type:'Hidden', step:'acd45227cac332d443c4e1db', value: gfUtms.utm_medium },
+        hidden_25865364589303:            { type:'Hidden', step:'acd45227cac332d443c4e1db', value: gfUtms.utm_term },
+        hidden_337672242598594:           { type:'Hidden', step:'acd45227cac332d443c4e1db', value: gfUtms.utm_campaign },
         hidden_427537542763995:           { type:'Hidden', step:'acd45227cac332d443c4e1db', value: gfd.stateText },
-        hidden_579780982435417:           { type:'Hidden', step:'acd45227cac332d443c4e1db', value: p.get('utm_adname')    || '' },
-        hidden_585157882311305:           { type:'Hidden', step:'acd45227cac332d443c4e1db', value: p.get('fbaid')         || '' },
-        hidden_92922683992474:            { type:'Hidden', step:'acd45227cac332d443c4e1db', value: p.get('fbaadid')       || '' },
-        hidden_436124489257771:           { type:'Hidden', step:'acd45227cac332d443c4e1db', value: p.get('fbacid')        || '' },
-        hidden_97816714524287:            { type:'Hidden', step:'acd45227cac332d443c4e1db', value: p.get('utm_placement') || '' },
-        hidden_77823743129070:            { type:'Hidden', step:'acd45227cac332d443c4e1db', value: p.get('utm_network')   || '' },
-        hidden_202243593262175:           { type:'Hidden', step:'acd45227cac332d443c4e1db', value: p.get('utm_type')      || '' },
+        hidden_579780982435417:           { type:'Hidden', step:'acd45227cac332d443c4e1db', value: gfUtms.utm_adname },
+        hidden_585157882311305:           { type:'Hidden', step:'acd45227cac332d443c4e1db', value: gfUtms.utm_adid },
+        hidden_92922683992474:            { type:'Hidden', step:'acd45227cac332d443c4e1db', value: gfUtms.utm_adsetid },
+        hidden_436124489257771:           { type:'Hidden', step:'acd45227cac332d443c4e1db', value: gfUtms.utm_campaignid },
+        hidden_97816714524287:            { type:'Hidden', step:'acd45227cac332d443c4e1db', value: gfUtms.utm_placement },
+        hidden_77823743129070:            { type:'Hidden', step:'acd45227cac332d443c4e1db', value: gfUtms.utm_sitesourcename },
+        hidden_202243593262175:           { type:'Hidden', step:'acd45227cac332d443c4e1db', value: gfUtms.utm_creative },
+        hidden_clickid:                   { type:'Hidden', step:'acd45227cac332d443c4e1db', value: gfUtms.clickid },
+        hidden_utm_adsetname:             { type:'Hidden', step:'acd45227cac332d443c4e1db', value: gfUtms.utm_adsetname },
+        hidden_utm_state:                 { type:'Hidden', step:'acd45227cac332d443c4e1db', value: gfUtms.utm_state },
         hidden_264066733844907:           { type:'Hidden', step:'a3521f07443c3a05b36140a5', value: '' },
         hidden_548794601391906:           { type:'Hidden', step:'fe5ec8504219f1b6c4e59be5', value: '' },
         hidden_726817425868207:           { type:'Hidden', step:'1d50fdecb868a4b4b6fa9ead', value: '' },
