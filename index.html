@@ -652,37 +652,63 @@ function gfPrevStepNum(cur) {
   return prev;
 }
 
-// ── Track step completion via GTM dataLayer ──────────────────
-// Replicates Growform's exact dataLayer format so existing GTM triggers fire
-var GF_STEP_BUTTON_TEXT = {
-  1: function(){ return GF_LABELS.serviceType[gfd.serviceType]    || gfd.serviceType; },
-  2: function(){ return GF_LABELS.attorney[gfd.attorney]          || gfd.attorney; },
-  3: function(){ return GF_LABELS.fault[gfd.fault]                || gfd.fault; },
-  4: function(){ return GF_LABELS.injury[gfd.injury]              || gfd.injury; },
-  5: function(){ return GF_LABELS.accidentHappen[gfd.accidentHappen] || gfd.accidentHappen; },
-  6: function(){ return gfd.stateText; },
-  7: function(){ return gfd.zipcode; },
-  8: function(){ return GF_LABELS.insured[gfd.insured]            || gfd.insured; },
-  9: function(){ return gfd.describe; },
-  10: function(){ return gfd.firstName + ' ' + gfd.lastName; },
-  11: function(){ return gfd.email; },
-  12: function(){ return gfd.phone; }
+// ── Step metadata (button text + name) ───────────────────────
+var GF_STEP_META = {
+  1:  { name: 'service_type',  text: function(){ return GF_LABELS.serviceType[gfd.serviceType]       || gfd.serviceType; } },
+  2:  { name: 'attorney',      text: function(){ return GF_LABELS.attorney[gfd.attorney]             || gfd.attorney; } },
+  3:  { name: 'fault',         text: function(){ return GF_LABELS.fault[gfd.fault]                  || gfd.fault; } },
+  4:  { name: 'injury',        text: function(){ return GF_LABELS.injury[gfd.injury]                || gfd.injury; } },
+  5:  { name: 'timeframe',     text: function(){ return GF_LABELS.accidentHappen[gfd.accidentHappen] || gfd.accidentHappen; } },
+  6:  { name: 'state',         text: function(){ return gfd.stateText; } },
+  7:  { name: 'zipcode',       text: function(){ return gfd.zipcode; } },
+  8:  { name: 'insured',       text: function(){ return GF_LABELS.insured[gfd.insured]              || gfd.insured; } },
+  9:  { name: 'describe',      text: function(){ return gfd.describe; } },
+  10: { name: 'name',          text: function(){ return gfd.firstName + ' ' + gfd.lastName; } },
+  11: { name: 'email',         text: function(){ return gfd.email; } },
+  12: { name: 'phone',         text: function(){ return gfd.phone; } }
 };
+
+var gfFormCompleted = false;
+
+function gfClientVars() {
+  return {
+    'dlv - email':             gfd.email,
+    'Growform Phone':          gfd.phone.replace(/\D/g,''),
+    'dlv - lastname':          gfd.lastName,
+    'Growform State':          gfd.stateText ? gfd.stateText.toLowerCase() : '',
+    'dl-zipcode':              gfd.zipcode,
+    'dlv - form_step_number':  gfCurStep,
+    'dlv - form_step_name':    GF_STEP_META[gfCurStep] ? GF_STEP_META[gfCurStep].name : ''
+  };
+}
 
 function gfTrackStep(stepNumber) {
   if (!window.dataLayer) return;
-  var buttonText = GF_STEP_BUTTON_TEXT[stepNumber] ? GF_STEP_BUTTON_TEXT[stepNumber]() : '';
-  window.dataLayer.push({
-    event:            'growformIframe.growformStepCompleted',
-    grow_step:        stepNumber,
-    grow_buttonText:  buttonText,
-    'dlv - email':    gfd.email,
-    'Growform Phone': gfd.phone.replace(/\D/g,''),
-    'dlv - lastname': gfd.lastName,
-    'Growform State': gfd.stateText ? gfd.stateText.toLowerCase() : '',
-    'dl-zipcode':     gfd.zipcode
-  });
+  var meta = GF_STEP_META[stepNumber] || { name: '', text: function(){ return ''; } };
+  var payload = { event: 'growformIframe.growformStepCompleted', grow_step: stepNumber, grow_buttonText: meta.text() };
+  Object.assign(payload, gfClientVars());
+  window.dataLayer.push(payload);
 }
+
+function gfTrackCompleted() {
+  if (!window.dataLayer) return;
+  gfFormCompleted = true;
+  var payload = { event: 'growformIframe.growformFormCompleted' };
+  Object.assign(payload, gfClientVars());
+  window.dataLayer.push(payload);
+}
+
+// ── Form abandonment tracking ─────────────────────────────────
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'hidden' && !gfFormCompleted && gfCurStep > 1 && window.dataLayer) {
+    var meta = GF_STEP_META[gfCurStep] || { name: '' };
+    window.dataLayer.push({
+      event:                   'form_abandonment',
+      'dlv - form_step_number': gfCurStep,
+      'dlv - form_step_name':   meta.name
+    });
+  }
+});
 
 // ── Advance (called after auto-pick or NEXT button) ───────────
 function gfAdvance() {
@@ -802,6 +828,7 @@ function gfSubmit() {
 
   // Fire GTM events
   gfTrackStep(TOTAL_STEPS);
+  gfTrackCompleted();
   if (window.dataLayer) {
     window.dataLayer.push({ event: 'form_submit', service_type: gfd.serviceType, state: gfd.state });
   }
