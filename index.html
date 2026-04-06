@@ -182,6 +182,8 @@
         <p>Use our <strong>Free Compensation Calculator</strong> to See What You Qualify For</p>
       </div>
 
+      <!-- TrustedForm needs a <form> element to inject cert URL -->
+      <form id="tf-anchor" style="display:none"></form>
       <!-- ══ CUSTOM FORM (replaces Growform iframe) ══ -->
       <div id="growform-wrapper">
       <div class="gf-card">
@@ -678,7 +680,8 @@ var GF_LABELS = {
 // ── Build Make.com webhook payload ────────────────────────────
 function gfBuildPayload() {
   var p   = new URLSearchParams(window.location.search);
-  var tf  = (document.querySelector('input[name="xxTrustedFormCertUrl"]') || {}).value || '';
+  var tfEl = document.querySelector('input[name="xxTrustedFormCertUrl"]') || document.querySelector('[name="xxTrustedFormCertUrl"]');
+  var tf  = (tfEl && tfEl.value) ? tfEl.value : (window.tf_token || '');
   var eid = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
   var lbl = function(map, val) { return map[val] !== undefined ? map[val] : val; };
 
@@ -726,6 +729,7 @@ function gfBuildPayload() {
         hidden_164585691415058:           { type:'Hidden', step:'1d50fdecb868a4b4b6fa9ead', value: '' },
         system_userAgent:                 { type:'Text', label:'System User-Agent',       step: 1, value: navigator.userAgent },
         TrustedForm_certUrl:              { type:'Text', label:'Trusted Form Cert URL',   step: 1, value: tf },
+        phone_400747347981930_twilio_lookup_status: { type:'TwilioLookupStatus', label:'phone_400747347981930 Twilio Lookup Status', value: '' },
         system_ip:                        { type:'Text', label:'System IP',                        value: '' }
       }
     },
