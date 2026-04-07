@@ -860,12 +860,31 @@ function gfSubmit() {
     window.dataLayer.push({ event: 'form_submit', service_type: gfd.serviceType, state: gfd.state });
   }
 
-  // Send to Make.com webhook (async — does not block UI)
+  // ── Determine redirect URL ────────────────────────────────
+  var QUALIFIED_SERVICES = ['car_accident','motorcycle_accident','trucking_accident'];
+  var QUALIFIED_TIMEFRAMES = ['within_1_week','within_1_3_months','within_4_6_months','within_1_year'];
+  var isQualified = (
+    gfd.fault       === 'no'    &&
+    gfd.injury      === 'yes'   &&
+    gfd.attorney    === 'not_yet' &&
+    QUALIFIED_SERVICES.indexOf(gfd.serviceType)     !== -1 &&
+    QUALIFIED_TIMEFRAMES.indexOf(gfd.accidentHappen) !== -1
+  );
+  var isDisqualified = (gfd.fault === 'no' && !isQualified);
+  var redirectUrl = isQualified
+    ? 'https://caraccidenthelp.net/thank-you/?lead_stage=qualified-lead'
+    : isDisqualified
+      ? 'https://caraccidenthelp.net/diminished-value-claim/?lead_stage=disqualified-lead'
+      : null;
+
+  // Send to Make.com webhook, then redirect
   fetch('https://hook.us2.make.com/bq4dng1sofubjsweiw8w46deyryw5f9b', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(gfBuildPayload())
-  }).catch(function(){});
+  }).catch(function(){}).finally(function(){
+    if (redirectUrl) window.location.href = redirectUrl;
+  });
 }
 
 // ── Init: pre-fill state from URL if utm_state set ───────────
