@@ -131,8 +131,8 @@
     #growform-wrapper .rt-ind{display:none;}
     /* Square buttons */
     #growform-wrapper .sq-wrap{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-    #growform-wrapper .sq-btn{background:#1d2939;border:2px solid #1d2939;border-radius:6px;padding:16px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;font-family:'Poppins',sans-serif;font-size:21px;font-weight:500;color:rgb(254,254,254);line-height:120%;transition:all .2s;text-align:center;position:relative;width:100%;}
-    #growform-wrapper .sq-btn img{width:66%;max-width:100px;height:auto;object-fit:contain;}
+    #growform-wrapper .sq-btn{background:#1d2939;border:2px solid #1d2939;border-radius:6px;padding:16px 12px;cursor:pointer;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:10px;font-family:'Poppins',sans-serif;font-size:21px;font-weight:500;color:rgb(254,254,254);line-height:120%;transition:all .2s;text-align:left;position:relative;width:100%;}
+    #growform-wrapper .sq-btn img{width:66px;height:66px;object-fit:contain;flex-shrink:0;order:1;}
     #growform-wrapper .sq-btn:hover{opacity:.85;}
     #growform-wrapper .sq-btn.sel{border-color:#4583ff;box-shadow:0 0 0 2px #4583ff;}
     #growform-wrapper .sq-ind{display:none;}
@@ -401,12 +401,10 @@
           <h2 class="gf-h sm">What's your name?</h2>
           <div class="gf-name-row">
             <div class="gf-field">
-              <label class="gf-label">First name</label>
               <input type="text" class="gf-input" id="gfFirstName" placeholder="First name" oninput="gfd.firstName=this.value;">
               <div class="gf-err" id="gf-err-10a">Please enter your first name.</div>
             </div>
             <div class="gf-field">
-              <label class="gf-label">Last name</label>
               <input type="text" class="gf-input" id="gfLastName" placeholder="Last name" oninput="gfd.lastName=this.value;">
               <div class="gf-err" id="gf-err-10b">Please enter your last name.</div>
             </div>
