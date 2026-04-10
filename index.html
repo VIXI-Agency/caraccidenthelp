@@ -956,27 +956,26 @@ function gfSubmit() {
 })();
 
 // ── Auto-detect state from IP geolocation ────────────────────
-// (function(){
-//   fetch('https://ipapi.co/json/')
-//     .then(function(res){ return res.json(); })
-//     .then(function(data){
-//       console.log('IP Geolocation data:', data);
-//       if (!data.region || data.country_code !== 'US') return;
-//       if (gfSkipStateStep()) return; // UTM already set state
-//       var sel = document.getElementById('gfStateSelect');
-//       if (!sel) return;
-//       var val = data.region.toLowerCase().replace(/\s+/g,'_');
-//       for (var i = 0; i < sel.options.length; i++) {
-//         if (sel.options[i].value === val) {
-//           sel.value = val;
-//           gfd.state = val;
-//           gfd.stateText = sel.options[i].text;
-//           break;
-//         }
-//       }
-//     })
-//     .catch(function(err){ console.log('IP Geolocation error:', err); });
-// })();
+(function(){
+  fetch('https://ipapi.co/json/')
+    .then(function(res){ return res.json(); })
+    .then(function(data){
+      if (!data.region || data.country_code !== 'US') return;
+      if (gfSkipStateStep()) return;
+      var sel = document.getElementById('gfStateSelect');
+      if (!sel) return;
+      var val = data.region.toLowerCase().replace(/\s+/g,'_');
+      for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === val) {
+          sel.value = val;
+          gfd.state = val;
+          gfd.stateText = sel.options[i].text;
+          break;
+        }
+      }
+    })
+    .catch(function(){});
+})();
 </script>
 
 <!-- TrustedForm — deferred, non-render-blocking -->
