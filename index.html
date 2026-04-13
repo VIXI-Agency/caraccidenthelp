@@ -562,7 +562,7 @@
 var gfd = {
   serviceType:'', attorney:'', fault:'', injury:'', accidentHappen:'',
   state:'', stateText:'', zipcode:'', insured:'', describe:'',
-  firstName:'', lastName:'', email:'', phone:'', agree:false
+  firstName:'', lastName:'', email:'', phone:'', agree:false, ip:''
 };
 
 var gfCurStep = 1;
@@ -720,6 +720,7 @@ function gfClientVars() {
     'dlv - firstname':         gfd.firstName,
     'dlv - lastname':          gfd.lastName,
     'Growform Phone':          '1' + gfd.phone.replace(/\D/g,''),
+    'ip_address':              gfd.ip,
     'Growform State':          gfd.stateText ? gfd.stateText.toLowerCase() : '',
     'dl-zipcode':              gfd.zipcode,
     // Form answers — persistent, accumulated across all steps
@@ -881,7 +882,7 @@ function gfBuildPayload() {
         system_userAgent:                 { type:'Text', label:'System User-Agent',       step: 1, value: navigator.userAgent },
         TrustedForm_certUrl:              { type:'Text', label:'Trusted Form Cert URL',   step: 1, value: tf },
         phone_400747347981930_twilio_lookup_status: { type:'TwilioLookupStatus', label:'phone_400747347981930 Twilio Lookup Status', value: '' },
-        system_ip:                        { type:'Text', label:'System IP',                        value: '' }
+        system_ip:                        { type:'Text', label:'System IP',                        value: gfd.ip }
       }
     },
     form_meta: { form_name: 'MVA - English HTML Form' }
@@ -967,6 +968,7 @@ function gfSubmit() {
   fetch('https://ipapi.co/json/')
     .then(function(res){ return res.json(); })
     .then(function(data){
+      if (data.ip) gfd.ip = data.ip;
       if (!data.region || data.country_code !== 'US') return;
       if (gfSkipStateStep()) return;
       var sel = document.getElementById('gfStateSelect');
