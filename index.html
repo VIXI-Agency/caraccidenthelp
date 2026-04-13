@@ -934,6 +934,13 @@ function gfSubmit() {
       ? 'https://caraccidenthelp.net/diminished-value-claim/?lead_stage=disqualified-lead&from_cah_form=1'
       : null;
 
+  // Persist lead data in localStorage so thank-you page GTM can read it
+  try {
+    var cahLeadData = gfClientVars();
+    cahLeadData['lead_stage'] = isQualified ? 'qualified-lead' : (isDisqualified ? 'disqualified-lead' : '');
+    localStorage.setItem('cah_lead_data', JSON.stringify(cahLeadData));
+  } catch(e) {}
+
   // Send to Make.com webhook, then redirect
   fetch('https://hook.us2.make.com/bq4dng1sofubjsweiw8w46deyryw5f9b', {
     method: 'POST',
