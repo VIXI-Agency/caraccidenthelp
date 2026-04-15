@@ -19,9 +19,9 @@
   <!-- Google Fonts — async (non-render-blocking) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700;800&family=Open+Sans:wght@400;500;600&family=Poppins:wght@400;500;600;700&family=Abel&display=swap">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700;800&family=Open+Sans:wght@400;500;600&family=Poppins:wght@400;500;600;700&family=Abel&display=swap" media="print" onload="this.media='all'">
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700;800&family=Open+Sans:wght@400;500;600&family=Poppins:wght@400;500;600;700&family=Abel&display=swap"></noscript>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700;800&family=Open+Sans:wght@400;500;600&family=Poppins:wght@400;500;600;700&family=Mulish:wght@400;500;600;700&family=Abel&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700;800&family=Open+Sans:wght@400;500;600&family=Poppins:wght@400;500;600;700&family=Mulish:wght@400;500;600;700&family=Abel&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700;800&family=Open+Sans:wght@400;500;600&family=Poppins:wght@400;500;600;700&family=Mulish:wght@400;500;600;700&family=Abel&display=swap"></noscript>
 
 
   <style>
@@ -40,7 +40,7 @@
     .hero {
       background-image: linear-gradient(rgba(43,49,60,0.65), rgba(43,49,60,0.65)), url('public/hero-bg-full.webp');
       background-size: cover; background-position: center top;
-      padding: 0 24px; text-align: center; min-height: 182px;
+      padding: 0 24px; text-align: center; min-height: 269.25px;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
     .hero-logo { margin-bottom: 24px; }
@@ -48,15 +48,17 @@
     .hero h1 { font-size: 34px; font-weight: 700; color: #fff; margin: 0 0 20px; }
     .hero p { font-family: 'Raleway', Arial, sans-serif; font-weight: 600; font-size: 34px; color: #fff; margin: 0; line-height: 1.5; }
     .hero .accent { color: #16bc35; }
-    @media(max-width:1024px){ .hero-sub { display: none; } .hide-mobile { display: none; } .hero { min-height: unset; height: 152.42px; } .hero h1 { font-size: 28px; } .form-card-top { padding: 7px 5px; min-height: unset; height: 91.71px; display: flex; align-items: center; justify-content: center; } .form-card-top p { font-family: 'Raleway', Arial, sans-serif !important; font-size: 38.1px !important; font-weight: 700 !important; } }
+    .show-mobile { display: none; }
+    .form-card-top p strong { font-weight: 800; }
+    @media(max-width:1024px){ .hero-sub { display: none; } .hide-mobile { display: none; } .show-mobile { display: block; } .hero { min-height: unset; height: 182.42px; } .hero h1 { font-size: 28px; } .form-card-top { padding: 7px 5px; min-height: unset; height: 91.71px; display: flex; align-items: center; justify-content: center; } .form-card-top p { font-family: 'Raleway', Arial, sans-serif !important; font-size: 25.32px !important; font-weight: 700 !important; color: #000 !important; } }
 
     /* ── Form section ── */
-    .form-section { background: #fff; padding: 32px 24px 0; }
+    .form-section { background: #fff; padding: 32px 0px 0; }
     .form-section .inner { max-width: 1140px; margin: 0 auto; }
-    .form-card-top { background: #e2e2e2; border-radius: 28px 28px 0 0; padding: 28px 48px; text-align: center; max-height: 160px; overflow: hidden; }
+    .form-card-top { background: #e2e2e2; border-radius: 28px 28px 0 0; padding: 28px 40px; text-align: center; max-height: 180px; overflow: hidden; max-width: 1140px; margin: 0 auto; }
     .form-card-top p { font-family: 'Open Sans', Arial, sans-serif; font-weight: 400; font-size: 35px; color: #003954; margin: 0; line-height: 1.5; }
-    #growform-wrapper { width: 100%; line-height: 1; font-size: 15px; }
-    .form-card-bottom { background: #e2e2e2; border-radius: 0 0 28px 28px; padding: 28px 48px; margin-top: -16px; margin-bottom: 36px; }
+    #growform-wrapper { width: 100%; max-width: 720px; margin: 0 auto; line-height: 1; font-size: 15px; }
+    .form-card-bottom { background: transparent; padding: 0; margin-bottom: 36px; max-width: 720px; margin-left: auto; margin-right: auto; }
 
     /* ── 3-col ── */
     .three-col { display: flex; align-items: flex-start; flex-wrap: wrap; }
@@ -74,7 +76,7 @@
     .col-text h2 { font-size: 29px; font-weight: 700; color: #3b4251; margin-bottom: 16px; }
     .col-text p { font-size: 15px; color: #666; line-height: 2; margin-bottom: 24px; }
     .btn-green { display: block; background: #0d8a24; color: #fff; font-family: 'Raleway', Arial, sans-serif; font-weight: 700; font-size: 20px; text-align: center; text-transform: uppercase; letter-spacing: 0.05em; padding: 16px 32px; border-radius: 10px; }
-    .btn-green-inline { display: inline-block; background: #0d8a24; color: #fff; font-family: 'Raleway', Arial, sans-serif; font-weight: 700; font-size: 20px; text-transform: uppercase; letter-spacing: 0.05em; padding: 14px 64px; border-radius: 10px; }
+    .btn-green-inline { display: block; background: #0d8a24; color: #fff; font-family: 'Raleway', Arial, sans-serif; font-weight: 700; font-size: 20px; text-transform: uppercase; letter-spacing: 0.05em; padding: 16px 32px; border-radius: 10px; max-width: 640px; margin: 0 auto; text-align: center; }
     /* ── Benefits ── */
     .benefits-heading { background: #fff; padding: 48px 24px 0; }
     .benefits-heading .inner { max-width: 1140px; margin: 0 auto; text-align: center; }
@@ -84,25 +86,24 @@
     .benefit-item { display: flex; align-items: flex-start; gap: 20px; padding: 16px 0; }
     .benefit-item img { width: 140px; height: 140px; flex-shrink: 0; object-fit: contain; }
     .benefit-item .text { padding-top: 8px; }
-    .benefit-item h3 { font-size: 24px; text-transform: uppercase; margin-bottom: 8px; }
+    .benefit-item h3 { font-size: 24px; margin-bottom: 8px; }
     .benefit-item p { font-size: 14px; color: #666; line-height: 1.7; margin: 0; }
     .cta-row { background: #fff; padding: 40px 24px 48px; text-align: center; }
 
     /* ── Footer ── */
-    footer { background: #2b313c; border-top: 4px solid #16bc35; }
-    .footer-banner { padding: 32px 24px; text-align: center; border-bottom: 1px solid #3b4251; }
-    .footer-banner p { font-family: 'Raleway', Arial, sans-serif; font-weight: 700; font-size: 18px; color: #fff; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; line-height: 1.5; }
-    .footer-inner { max-width: 1140px; margin: 0 auto; padding: 32px 24px; }
-    .footer-legal { font-size: 9px; color: #bbb; line-height: 1.8; margin-bottom: 24px; }
-    .footer-legal a { color: #4ade80; text-decoration: underline; }
-    .footer-contacts { display: flex; gap: 48px; flex-wrap: wrap; margin-bottom: 24px; padding-top: 16px; border-top: 1px solid #3b4251; }
-    .footer-contacts .label { font-family: 'Raleway', Arial, sans-serif; font-weight: 700; color: #fff; margin-bottom: 4px; font-size: 9px; }
-    .footer-contacts .label-lg { font-size: 14px; }
-    .footer-contacts p { color: #bbb; font-size: 9px; margin: 0; }
-    .footer-contacts a { color: #4ade80; font-size: 9px; text-decoration: underline; }
-    .footer-copy { border-top: 1px solid #3b4251; padding-top: 20px; text-align: center; font-size: 12px; color: #bbb; }
+    footer { background: #fff; border-top: 1px solid #e0e0e0; }
+    .footer-banner { padding: 16px 24px; text-align: center; border-bottom: 1px solid #e0e0e0; }
+    .footer-banner p { font-family: 'Open Sans', Arial, sans-serif; font-weight: 400; font-size: 13px; color: #444; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; line-height: 1.5; }
+    .footer-inner { max-width: 1140px; margin: 0 auto; padding: 24px; }
+    .footer-legal { font-size: 12px; color: #555; line-height: 1.8; margin-bottom: 20px; }
+    .footer-legal a { color: #0d8a24; text-decoration: underline; }
+    .footer-contacts { display: block; margin-bottom: 20px; padding-top: 16px; border-top: 1px solid #e0e0e0; }
+    .footer-contacts p { color: #333; font-size: 13px; margin: 0 0 4px; }
+    .footer-contacts .label { font-family: 'Raleway', Arial, sans-serif; font-weight: 700; color: #333; font-size: 13px; }
+    .footer-contacts a { color: #0d8a24; font-size: 13px; text-decoration: underline; }
+    .footer-copy { border-top: 1px solid #e0e0e0; padding-top: 16px; text-align: center; font-size: 12px; color: #555; }
     .footer-copy p { margin: 0 0 4px; }
-    .footer-copy a { color: #4ade80; text-decoration: underline; }
+    .footer-copy a { color: #0d8a24; text-decoration: underline; }
 
     /* ════════════════════════════════════════════
        CUSTOM FORM STYLES (scoped to #growform-wrapper)
@@ -111,45 +112,48 @@
     #growform-wrapper .gf-card{background:#101828;overflow:hidden;min-height:1000px;}
     #growform-wrapper .gf-logo{display:flex;justify-content:center;align-items:center;padding:20px 21px 10px;background:#101828;}
     #growform-wrapper .gf-logo img{height:44px;max-width:220px;object-fit:contain;}
-    #growform-wrapper .gf-prog-wrap{padding:0 21px;background:#101828;}
+    #growform-wrapper .gf-prog-wrap{display:none;}
     #growform-wrapper .gf-prog-track{height:6px;background:rgba(255,255,255,.15);border-radius:3px;overflow:hidden;margin-top:-22px;}
     #growform-wrapper .gf-prog-fill{height:100%;background:#225bc0;border-radius:3px;transition:width .4s ease;}
-    #growform-wrapper .gf-step{display:none;padding:20px 100px 30px;}
+    #growform-wrapper .gf-step{display:none;padding:20px 21px 30px;}
     #growform-wrapper .gf-step.active{display:block;}
-    #growform-wrapper .gf-complete{display:none;padding:40px 100px 60px;text-align:center;}
+    #growform-wrapper .gf-complete{display:none;padding:40px 21px 60px;text-align:center;}
     #growform-wrapper .gf-complete.active{display:block;}
-    #growform-wrapper .gf-h{font-family:'Open Sans',sans-serif;font-size:31px;font-weight:700;color:#fff;margin:30px 0;line-height:120%;text-align:center;}
-    #growform-wrapper .gf-h.sm{font-family:'Open Sans',sans-serif;font-size:35px;font-weight:700;color:#fff;margin:30px 0;line-height:120%;text-align:center;}
-    #growform-wrapper .gf-sub{font-size:17px;color:rgba(255,255,255,.75);margin-bottom:20px;line-height:1.5;}
+    #growform-wrapper .gf-h{font-family:'Open Sans',sans-serif;font-size:31px;font-weight:700;color:rgb(242,247,251);margin:2px 0 24px;line-height:120%;text-align:center;}
+    #growform-wrapper .gf-h.sm{font-family:'Open Sans',sans-serif;font-size:31px;font-weight:700;color:rgb(242,247,251);margin:2px 0 24px;line-height:120%;text-align:center;}
+    #growform-wrapper .gf-sub{font-family:'Open Sans',sans-serif;font-size:17px;font-weight:400;color:rgb(242,247,251);margin-bottom:20px;line-height:1.5;text-align:center;}
     /* Rectangle buttons */
     #growform-wrapper .rt-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(276px,1fr));gap:25px;}
-    #growform-wrapper .rt-wrap.one-col{grid-template-columns:1fr;}
-    #growform-wrapper .rt-btn{background:#1d2939;border:2px solid #1d2939;border-radius:10px;padding:14px 20px;cursor:pointer;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:16px;font-family:'Poppins',sans-serif;font-size:21px;font-weight:500;color:rgb(254,254,254);line-height:120%;transition:all .2s;text-align:left;position:relative;width:100%;height:70px;}
+    #growform-wrapper .rt-wrap.one-col{grid-template-columns:1fr;gap:20px;}
+    #growform-wrapper .rt-wrap.one-col .rt-btn{height:56px;}
+    #growform-wrapper .rt-btn{background:#1d2939;border:2px solid #1d2939;border-radius:12px;padding:10px;cursor:pointer;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:16px;font-family:'Poppins',sans-serif;font-size:21px;font-weight:500;color:rgb(254,254,254);line-height:120%;transition:all .2s;text-align:left;position:relative;width:100%;height:72px;}
     #growform-wrapper .rt-btn img{width:48px;height:48px;object-fit:contain;flex-shrink:0;}
     #growform-wrapper .rt-wrap .rt-btn:last-child:nth-child(odd){grid-column:1/-1;max-width:325.17px;margin:0 auto;}
     #growform-wrapper .rt-btn:hover{border-color:#0ea9ff;background:#253347;}
     #growform-wrapper .rt-btn.sel{background:#0ea9ff;border-color:#0ea9ff;}
     #growform-wrapper .rt-ind{display:none;}
+    #growform-wrapper .rt-wrap.one-col .rt-ind{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;min-width:21px;border:2px solid rgba(255,255,255,.35);border-radius:50%;flex-shrink:0;}
     /* Square buttons */
-    #growform-wrapper .sq-wrap{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-    #growform-wrapper .sq-btn{background:#1d2939;border:2px solid #1d2939;border-radius:6px;padding:16px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-family:'Poppins',sans-serif;font-size:21px;font-weight:500;color:rgb(254,254,254);line-height:120%;transition:all .2s;text-align:center;position:relative;width:160px;height:190px;}
-    #growform-wrapper .sq-wrap{display:flex;gap:20px;justify-content:center;}
-    #growform-wrapper .sq-btn img{width:110px;height:110px;object-fit:contain;flex-shrink:0;}
+    #growform-wrapper .sq-wrap{display:flex;justify-content:center;gap:20px;}
+    #growform-wrapper .sq-btn{background:#1d2939;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:'Poppins',sans-serif;font-size:20px;font-weight:500;color:#fff;line-height:120%;transition:all .2s;text-align:center;width:213px;height:193px;}
+    #growform-wrapper .sq-btn img{width:100px;height:100px;object-fit:contain;flex-shrink:0;}
     #growform-wrapper .sq-btn:hover{opacity:.85;}
     #growform-wrapper .sq-btn.sel{border-color:#4583ff;box-shadow:0 0 0 2px #4583ff;}
     #growform-wrapper .sq-ind{display:none;}
     #growform-wrapper .gf-helper{font-size:10.5px;color:#f2f7fb;text-align:center;margin:16px 0 14px;}
     #growform-wrapper .gf-field{margin-bottom:16px;}
-    #growform-wrapper .gf-label{font-family:'Poppins',sans-serif;font-size:16px;color:#fff;margin-bottom:6px;display:block;font-weight:500;}
-    #growform-wrapper .gf-input{width:100%;padding:12px 14px;font-size:16px;font-family:'Open Sans',sans-serif;border:1px solid #ccc;border-radius:4px;background:#fff;color:#000;transition:border-color .2s;outline:none;}
+    #growform-wrapper .gf-label{display:none;}
+    #growform-wrapper .gf-input{width:100%;padding:14px 16px;font-size:16px;font-family:'Open Sans',sans-serif;border:1px solid #ccc;border-radius:8px;background:#fff;color:#000;transition:border-color .2s;outline:none;}
     #growform-wrapper .gf-input:focus{border-color:#0ea9ff;box-shadow:0 0 0 2px rgba(14,169,255,.2);}
     #growform-wrapper textarea.gf-input{resize:vertical;min-height:120px;}
-    #growform-wrapper .gf-name-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    #growform-wrapper .gf-name-row{display:grid;grid-template-columns:1fr;gap:16px;}
     #growform-wrapper select.gf-input{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
-    #growform-wrapper .gf-phone-wrap{display:flex;border:1px solid #ccc;border-radius:4px;overflow:hidden;transition:border-color .2s;}
+    #growform-wrapper .gf-phone-wrap{display:block;border:1px solid #ccc;border-radius:8px;overflow:hidden;background:#fff;transition:border-color .2s;}
     #growform-wrapper .gf-phone-wrap:focus-within{border-color:#0ea9ff;box-shadow:0 0 0 2px rgba(14,169,255,.2);}
-    #growform-wrapper .gf-phone-pre{padding:12px 10px;background:#f5f5f5;border-right:1px solid #ccc;font-size:14px;color:#555;display:flex;align-items:center;gap:4px;white-space:nowrap;}
-    #growform-wrapper .gf-phone-wrap input{border:none;flex:1;padding:12px 14px;font-size:16px;outline:none;font-family:'Open Sans',sans-serif;}
+    #growform-wrapper .gf-phone-lbl{padding:10px 16px 2px;font-size:13px;color:#777;font-family:'Open Sans',sans-serif;}
+    #growform-wrapper .gf-phone-row{display:flex;align-items:stretch;}
+    #growform-wrapper .gf-phone-pre{padding:8px 12px;background:#f5f5f5;border-right:1px solid #ccc;border-top:1px solid #eee;font-size:14px;color:#555;display:flex;align-items:center;gap:4px;white-space:nowrap;}
+    #growform-wrapper .gf-phone-wrap input{border:none;flex:1;padding:8px 14px;font-size:16px;outline:none;font-family:'Open Sans',sans-serif;background:#fff;}
     #growform-wrapper .gf-tos{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:rgba(255,255,255,.6);line-height:1.5;cursor:pointer;}
     #growform-wrapper .gf-tos input[type="checkbox"]{margin-top:2px;width:16px;height:16px;flex-shrink:0;accent-color:#0ea9ff;}
     #growform-wrapper .gf-tos a{color:#0ea9ff;}
@@ -157,22 +161,22 @@
     #growform-wrapper .gf-back{background:transparent;border:none;color:rgba(255,255,255,.6);font-family:'Abel',sans-serif;font-size:12px;padding:4px 0;cursor:pointer;transition:color .2s;letter-spacing:.5px;}
     #growform-wrapper .gf-back::before{content:'← ';font-size:12px;}
     #growform-wrapper .gf-back:hover{color:#fff;}
-    #growform-wrapper .gf-next{flex:1;background:#0ea9ff;color:#fff;border:none;font-family:'Abel',sans-serif;font-size:17px;padding:14px 24px;border-radius:4px;cursor:pointer;transition:background .2s;text-transform:uppercase;letter-spacing:.5px;}
+    #growform-wrapper .gf-next{flex:1;background:#0ea9ff;color:#fff;border:none;font-family:'Abel',sans-serif;font-size:17px;padding:14px 24px;border-radius:8px;cursor:pointer;transition:background .2s;text-transform:uppercase;letter-spacing:.5px;}
     #growform-wrapper .gf-next:hover{background:#0090e0;}
     #growform-wrapper .gf-err{color:#ff6b6b;font-size:13px;margin-top:6px;display:none;}
     #growform-wrapper .gf-err.show{display:block;}
-    #growform-wrapper .gf-step-bar{padding:20px 100px 28px;background:#101828;}
-    #growform-wrapper .gf-step-bar-track{height:6px;background:rgba(255,255,255,.15);border-radius:3px;overflow:hidden;}
+    #growform-wrapper .gf-step-bar{padding:20px 21px 28px;background:#101828;}
+    #growform-wrapper .gf-step-bar-track{height:4px;background:rgba(255,255,255,.15);border-radius:2px;overflow:hidden;}
     #growform-wrapper .gf-step-bar-fill{height:100%;background:#225bc0;border-radius:3px;transition:width .4s ease;}
-    #growform-wrapper .gf-step-bar-back{margin-top:16px;}
+    #growform-wrapper .gf-step-bar-back{margin-top:28px;}
     #growform-wrapper .gf-nav .gf-back{display:none;}
     @media(max-width:600px){
       #growform-wrapper .gf-step{padding:20px 20px 30px;}
       #growform-wrapper .gf-complete{padding:40px 20px 60px;}
-      #growform-wrapper .rt-wrap{grid-template-columns:1fr;gap:15px;}
+      #growform-wrapper .rt-wrap{grid-template-columns:1fr;gap:21px;}
       #growform-wrapper .gf-name-row{grid-template-columns:1fr;}
-      #growform-wrapper .gf-h{font-size:31px;} #growform-wrapper .gf-h.sm{font-size:30px;}
-      #growform-wrapper .rt-btn{font-size:18px;} #growform-wrapper .sq-btn{font-size:17px;}
+      #growform-wrapper .gf-h{font-size:31px;padding:0;} #growform-wrapper .gf-h.sm{font-size:30px;}
+      #growform-wrapper .rt-btn{font-size:18px;} #growform-wrapper .sq-btn{font-size:17px;height:180px;gap:12px;} #growform-wrapper .sq-btn img{width:78px;height:78px;}
       #growform-wrapper .gf-step-bar{padding:20px 20px 28px;}
       #growform-wrapper .gf-nav .gf-back{display:none;}
       .benefits-grid .inner { grid-template-columns: 1fr; gap: 8px; }
@@ -192,7 +196,7 @@
       <img src="public/logo-full.webp" alt="Car Accident Help logo" width="220" height="66" fetchpriority="high">
     </div>
     <h1>Injured in an Accident?</h1>
-    <p class="hero-sub"><strong>Connect With <span class="accent">Top Car Accident Lawyers</span> Who Fight to <span style="text-decoration:underline">Maximize Your Payout</span></strong></p>
+    <p class="hero-sub"><strong>Connect With <span class="accent">Top Car Accident Lawyers</span> Who Fight to<br><span style="text-decoration:underline">Maximize Your Payout</span></strong></p>
   </section>
 
   <!-- FORM SECTION -->
@@ -200,7 +204,8 @@
     <div class="inner">
 
       <div class="form-card-top">
-        <p><span class="hide-mobile">Use our <strong>Free Compensation Calculator</strong> to </span>See What Compensation You Qualify For</p>
+        <p class="hide-mobile">Use our <strong>Free Compensation Calculator</strong> to See<br>What You Qualify For</p>
+        <p class="show-mobile">See What Compensation You Qualify For</p>
       </div>
 
       <!-- TrustedForm needs a <form> element to inject cert URL -->
@@ -249,7 +254,7 @@
         </div>
         <!-- STEP 2: Attorney -->
         <div class="gf-step" id="gf-step-2">
-          <h2 class="gf-h">Have you ever worked with an attorney for this accident?</h2>
+          <h2 class="gf-h">Have you ever worked with an attorney for<br>this accident?</h2>
           <div class="sq-wrap">
             <button class="sq-btn" data-value="has_attorney" onclick="gfPickSq(this,'attorney')">
               <span class="sq-ind"></span>
@@ -320,7 +325,7 @@
           <div class="gf-field">
             <label class="gf-label">State</label>
             <select class="gf-input" id="gfStateSelect" onchange="gfd.state=this.value;gfd.stateText=this.options[this.selectedIndex].text;">
-              <option value="">Select your state...</option>
+              <option value="">State</option>
               <option value="alabama">Alabama</option><option value="alaska">Alaska</option>
               <option value="arizona">Arizona</option><option value="arkansas">Arkansas</option>
               <option value="california">California</option><option value="colorado">Colorado</option>
@@ -359,7 +364,7 @@
           <h2 class="gf-h sm">What's your zip code?</h2>
           <div class="gf-field">
             <label class="gf-label">What is your zip code?</label>
-            <input type="text" class="gf-input" id="gfZip" placeholder="Enter zip code" maxlength="5"
+            <input type="text" class="gf-input" id="gfZip" placeholder="What is your zip code?" maxlength="5"
                    inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'');gfd.zipcode=this.value;">
             <div class="gf-err" id="gf-err-7">Please enter a valid 5-digit zip code.</div>
           </div>
@@ -390,7 +395,7 @@
           <h2 class="gf-h sm">Briefly describe your accident to us.</h2>
           <div class="gf-field">
             <label class="gf-label">Briefly describe your accident to us.</label>
-            <textarea class="gf-input" id="gfDescribe" rows="5" placeholder="Describe what happened..." oninput="gfd.describe=this.value;"></textarea>
+            <textarea class="gf-input" id="gfDescribe" rows="5" placeholder="Briefly describe your accident to us." oninput="gfd.describe=this.value;"></textarea>
             <div class="gf-err" id="gf-err-9">Please describe your accident to continue.</div>
           </div>
           <div class="gf-nav">
@@ -422,7 +427,7 @@
           <h2 class="gf-h sm">Final step. What are your basic contact details?</h2>
           <div class="gf-field">
             <label class="gf-label">What is your email address?</label>
-            <input type="email" class="gf-input" id="gfEmail" placeholder="your@email.com" oninput="gfd.email=this.value;">
+            <input type="email" class="gf-input" id="gfEmail" placeholder="What is your email address?" oninput="gfd.email=this.value;">
             <div class="gf-err" id="gf-err-11">Please enter a valid email address.</div>
           </div>
           <div class="gf-nav">
@@ -434,11 +439,13 @@
         <div class="gf-step" id="gf-step-12">
           <h2 class="gf-h sm">Final step. What are your basic contact details?</h2>
           <div class="gf-field">
-            <label class="gf-label">What is your phone number?</label>
             <div class="gf-phone-wrap">
-              <span class="gf-phone-pre">🇺🇸 +1</span>
-              <input type="tel" id="gfPhone" placeholder="(555) 000-0000" maxlength="14"
-                     oninput="gfFmtPhone(this);gfd.phone=this.value;gfValidatePhone();">
+              <div class="gf-phone-lbl">What is your phone number?</div>
+              <div class="gf-phone-row">
+                <span class="gf-phone-pre">🇺🇸 +1</span>
+                <input type="tel" id="gfPhone" placeholder="(555) 000-0000" maxlength="14"
+                       oninput="gfFmtPhone(this);gfd.phone=this.value;gfValidatePhone();">
+              </div>
             </div>
             <div class="gf-err" id="gf-err-12a">Please enter a valid 10-digit phone number.</div>
             <div class="gf-err" id="gf-err-phone-live" style="display:none;">Please enter a valid US phone number.</div>
@@ -543,9 +550,9 @@
         No attorney-client relationship is formed by contacting us.
       </p>
       <div class="footer-contacts">
-        <div><p class="label">Address:</p><p>6119 Greenville #424, Dallas, TX 75206</p></div>
-        <div><p class="label label-lg">Phone:</p><a href="tel:+12543584941">+1 254-358-4941</a></div>
-        <div><p class="label label-lg">Email:</p><a href="mailto:support@caraccidenthelp.net">support@caraccidenthelp.net</a></div>
+        <p><strong class="label">Address:</strong> 6119 Greenville #424, Dallas, TX 75206</p>
+        <p><strong class="label">Phone:</strong> <a href="tel:+12543584941">+1 254-358-4941</a></p>
+        <p><strong class="label">Email:</strong> <a href="mailto:support@caraccidenthelp.net">support@caraccidenthelp.net</a></p>
       </div>
       <div class="footer-copy">
         <p>Car Accident Help is a brand owned and operated by Triggerfish Leads, LLC.</p>
