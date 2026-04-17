@@ -395,19 +395,34 @@
           <div class="gf-nav"><button class="gf-back" onclick="gfPrev()">BACK</button></div>
         </div>
 
-        <!-- STEP 9: Describe -->
+        <!-- STEP 9: Phone + TOS -->
         <div class="gf-step" id="gf-step-9">
-          <h2 class="gf-h sm">Briefly describe your accident to us.</h2>
+          <h2 class="gf-h sm">What is your phone number?</h2>
           <div class="gf-field">
-            <label class="gf-label">Briefly describe your accident to us.</label>
-            <textarea class="gf-input" id="gfDescribe" rows="5" placeholder="Briefly describe your accident to us." oninput="gfd.describe=this.value;"></textarea>
-            <div class="gf-err" id="gf-err-9">Please describe your accident to continue.</div>
+            <div class="gf-phone-wrap">
+              <div class="gf-phone-lbl">What is your phone number?</div>
+              <div class="gf-phone-row">
+                <span class="gf-phone-pre"><svg width="20" height="13" viewBox="0 0 20 13" xmlns="http://www.w3.org/2000/svg" style="border-radius:1px;vertical-align:middle;display:inline-block;margin-right:4px"><rect width="20" height="13" fill="#B22234"/><rect y="1" width="20" height="1" fill="#fff"/><rect y="3" width="20" height="1" fill="#fff"/><rect y="5" width="20" height="1" fill="#fff"/><rect y="7" width="20" height="1" fill="#fff"/><rect y="9" width="20" height="1" fill="#fff"/><rect y="11" width="20" height="1" fill="#fff"/><rect width="8" height="7" fill="#3C3B6E"/><circle cx="1.2" cy="1.2" r="0.35" fill="#fff"/><circle cx="2.4" cy="1.2" r="0.35" fill="#fff"/><circle cx="3.6" cy="1.2" r="0.35" fill="#fff"/><circle cx="4.8" cy="1.2" r="0.35" fill="#fff"/><circle cx="6" cy="1.2" r="0.35" fill="#fff"/><circle cx="7.2" cy="1.2" r="0.35" fill="#fff"/><circle cx="1.8" cy="2.33" r="0.35" fill="#fff"/><circle cx="3" cy="2.33" r="0.35" fill="#fff"/><circle cx="4.2" cy="2.33" r="0.35" fill="#fff"/><circle cx="5.4" cy="2.33" r="0.35" fill="#fff"/><circle cx="6.6" cy="2.33" r="0.35" fill="#fff"/><circle cx="1.2" cy="3.5" r="0.35" fill="#fff"/><circle cx="2.4" cy="3.5" r="0.35" fill="#fff"/><circle cx="3.6" cy="3.5" r="0.35" fill="#fff"/><circle cx="4.8" cy="3.5" r="0.35" fill="#fff"/><circle cx="6" cy="3.5" r="0.35" fill="#fff"/><circle cx="7.2" cy="3.5" r="0.35" fill="#fff"/><circle cx="1.8" cy="4.67" r="0.35" fill="#fff"/><circle cx="3" cy="4.67" r="0.35" fill="#fff"/><circle cx="4.2" cy="4.67" r="0.35" fill="#fff"/><circle cx="5.4" cy="4.67" r="0.35" fill="#fff"/><circle cx="6.6" cy="4.67" r="0.35" fill="#fff"/><circle cx="1.2" cy="5.83" r="0.35" fill="#fff"/><circle cx="2.4" cy="5.83" r="0.35" fill="#fff"/><circle cx="3.6" cy="5.83" r="0.35" fill="#fff"/><circle cx="4.8" cy="5.83" r="0.35" fill="#fff"/><circle cx="6" cy="5.83" r="0.35" fill="#fff"/><circle cx="7.2" cy="5.83" r="0.35" fill="#fff"/></svg></span>
+                <input type="tel" id="gfPhone" placeholder="(555) 000-0000" maxlength="14"
+                       oninput="gfFmtPhone(this);gfd.phone=this.value;gfValidatePhone();if(this.value.replace(/\D/g,'').length===10)gfTrestleLookup(this.value);">
+              </div>
+            </div>
+            <div class="gf-err" id="gf-err-9a">Please enter a valid 10-digit phone number.</div>
+            <div class="gf-err" id="gf-err-phone-live" style="display:none;">Please enter a valid US phone number.</div>
+          </div>
+          <div class="gf-field" style="margin-top:14px;">
+            <label class="gf-tos">
+              <input type="checkbox" id="gfTos" onchange="gfd.agree=this.checked;">
+              <span style="font-size:14px;color:#fff;">By clicking "Submit", you agree that the phone number you are providing may be used to contact you by one of <a href="https://caraccidenthelp.net/sponsors/" target="_blank" style="color:#808080;">our partners</a> (including with auto-dialed and prerecorded calls, and text messages) about your accident and potential legal help. Msg. and data rates apply. You agree that we may contact you anytime, including before 8am or after 9pm local time. You agree to the use of electronic signatures, our <a href="https://caraccidenthelp.net/privacy-policy/" target="_blank" style="color:#808080;">Privacy Policy</a>, and <a href="https://caraccidenthelp.net/terms/" target="_blank" style="color:#808080;">Terms of Use</a>.</span>
+            </label>
+            <div class="gf-err" id="gf-err-9b">You must agree to the terms to submit.</div>
           </div>
           <div class="gf-nav">
             <button class="gf-back" onclick="gfPrev()">BACK</button>
             <button class="gf-next" onclick="gfNext()">NEXT</button>
           </div>
         </div>
+
         <!-- STEP 10: Name -->
         <div class="gf-step" id="gf-step-10">
           <h2 class="gf-h sm">What's your name?</h2>
@@ -429,7 +444,7 @@
 
         <!-- STEP 11: Email -->
         <div class="gf-step" id="gf-step-11">
-          <h2 class="gf-h sm">Final step. What are your basic contact details?</h2>
+          <h2 class="gf-h sm">What is your email address?</h2>
           <div class="gf-field">
             <label class="gf-label">What is your email address?</label>
             <input type="email" class="gf-input" id="gfEmail" placeholder="What is your email address?" oninput="gfd.email=this.value;">
@@ -440,27 +455,14 @@
             <button class="gf-next" onclick="gfNext()">NEXT</button>
           </div>
         </div>
-        <!-- STEP 12: Phone + TOS -->
+
+        <!-- STEP 12: Describe -->
         <div class="gf-step" id="gf-step-12">
-          <h2 class="gf-h sm">Final step. What are your basic contact details?</h2>
+          <h2 class="gf-h sm">Briefly describe your accident to us.</h2>
           <div class="gf-field">
-            <div class="gf-phone-wrap">
-              <div class="gf-phone-lbl">What is your phone number?</div>
-              <div class="gf-phone-row">
-                <span class="gf-phone-pre"><svg width="20" height="13" viewBox="0 0 20 13" xmlns="http://www.w3.org/2000/svg" style="border-radius:1px;vertical-align:middle;display:inline-block;margin-right:4px"><rect width="20" height="13" fill="#B22234"/><rect y="1" width="20" height="1" fill="#fff"/><rect y="3" width="20" height="1" fill="#fff"/><rect y="5" width="20" height="1" fill="#fff"/><rect y="7" width="20" height="1" fill="#fff"/><rect y="9" width="20" height="1" fill="#fff"/><rect y="11" width="20" height="1" fill="#fff"/><rect width="8" height="7" fill="#3C3B6E"/><circle cx="1.2" cy="1.2" r="0.35" fill="#fff"/><circle cx="2.4" cy="1.2" r="0.35" fill="#fff"/><circle cx="3.6" cy="1.2" r="0.35" fill="#fff"/><circle cx="4.8" cy="1.2" r="0.35" fill="#fff"/><circle cx="6" cy="1.2" r="0.35" fill="#fff"/><circle cx="7.2" cy="1.2" r="0.35" fill="#fff"/><circle cx="1.8" cy="2.33" r="0.35" fill="#fff"/><circle cx="3" cy="2.33" r="0.35" fill="#fff"/><circle cx="4.2" cy="2.33" r="0.35" fill="#fff"/><circle cx="5.4" cy="2.33" r="0.35" fill="#fff"/><circle cx="6.6" cy="2.33" r="0.35" fill="#fff"/><circle cx="1.2" cy="3.5" r="0.35" fill="#fff"/><circle cx="2.4" cy="3.5" r="0.35" fill="#fff"/><circle cx="3.6" cy="3.5" r="0.35" fill="#fff"/><circle cx="4.8" cy="3.5" r="0.35" fill="#fff"/><circle cx="6" cy="3.5" r="0.35" fill="#fff"/><circle cx="7.2" cy="3.5" r="0.35" fill="#fff"/><circle cx="1.8" cy="4.67" r="0.35" fill="#fff"/><circle cx="3" cy="4.67" r="0.35" fill="#fff"/><circle cx="4.2" cy="4.67" r="0.35" fill="#fff"/><circle cx="5.4" cy="4.67" r="0.35" fill="#fff"/><circle cx="6.6" cy="4.67" r="0.35" fill="#fff"/><circle cx="1.2" cy="5.83" r="0.35" fill="#fff"/><circle cx="2.4" cy="5.83" r="0.35" fill="#fff"/><circle cx="3.6" cy="5.83" r="0.35" fill="#fff"/><circle cx="4.8" cy="5.83" r="0.35" fill="#fff"/><circle cx="6" cy="5.83" r="0.35" fill="#fff"/><circle cx="7.2" cy="5.83" r="0.35" fill="#fff"/></svg></span>
-                <input type="tel" id="gfPhone" placeholder="(555) 000-0000" maxlength="14"
-                       oninput="gfFmtPhone(this);gfd.phone=this.value;gfValidatePhone();">
-              </div>
-            </div>
-            <div class="gf-err" id="gf-err-12a">Please enter a valid 10-digit phone number.</div>
-            <div class="gf-err" id="gf-err-phone-live" style="display:none;">Please enter a valid US phone number.</div>
-          </div>
-          <div class="gf-field" style="margin-top:14px;">
-            <label class="gf-tos">
-              <input type="checkbox" id="gfTos" onchange="gfd.agree=this.checked;">
-              <span style="font-size:14px;color:#fff;">By clicking "Submit", you agree that the phone number you are providing may be used to contact you by one of <a href="https://caraccidenthelp.net/sponsors/" target="_blank" style="color:#808080;">our partners</a> (including with auto-dialed and prerecorded calls, and text messages) about your accident and potential legal help. Msg. and data rates apply. You agree that we may contact you anytime, including before 8am or after 9pm local time. You agree to the use of electronic signatures, our <a href="https://caraccidenthelp.net/privacy-policy/" target="_blank" style="color:#808080;">Privacy Policy</a>, and <a href="https://caraccidenthelp.net/terms/" target="_blank" style="color:#808080;">Terms of Use</a>.</span>
-            </label>
-            <div class="gf-err" id="gf-err-12b">You must agree to the terms to submit.</div>
+            <label class="gf-label">Briefly describe your accident to us.</label>
+            <textarea class="gf-input" id="gfDescribe" rows="5" placeholder="Briefly describe your accident to us." oninput="gfd.describe=this.value;"></textarea>
+            <div class="gf-err" id="gf-err-12">Please describe your accident to continue.</div>
           </div>
           <div class="gf-nav">
             <button class="gf-back" onclick="gfPrev()">BACK</button>
@@ -612,6 +614,14 @@ function gfShowStep(n) {
   gfUpdateProgress();
   var barBack = document.getElementById('gfBarBack');
   if (barBack) barBack.style.display = n > 1 ? 'block' : 'none';
+  // Pre-fill email from Trestle if available
+  if (n === 11 && gfTrestle.ready && gfTrestle.email) {
+    var emailEl = document.getElementById('gfEmail');
+    if (emailEl && !emailEl.value) {
+      emailEl.value = gfTrestle.email;
+      gfd.email = gfTrestle.email;
+    }
+  }
 }
 
 // ── Radio-type button pick (rt-btn) — auto-advance ───────────
@@ -651,7 +661,13 @@ function gfValidate(step) {
   if (step === 5) { if (!gfd.accidentHappen) { showErr('gf-err-5'); return false; } }
   if (step === 6) { if (!gfd.state)       { showErr('gf-err-6'); return false; } }
   if (step === 7) { if (!gfd.zipcode || gfd.zipcode.length !== 5) { showErr('gf-err-7'); return false; } }
-  if (step === 9) { if (!gfd.describe || gfd.describe.trim().length < 5) { showErr('gf-err-9'); return false; } }
+  if (step === 9) {
+    var ok9 = true;
+    var phoneDigits = gfd.phone.replace(/\D/g, '');
+    if (phoneDigits.length !== 10) { showErr('gf-err-9a'); ok9 = false; }
+    if (!gfd.agree) { showErr('gf-err-9b'); ok9 = false; }
+    if (!ok9) return false;
+  }
   if (step === 10) {
     var ok = true;
     if (!gfd.firstName || !gfd.firstName.trim()) { showErr('gf-err-10a'); ok = false; }
@@ -687,11 +703,24 @@ function gfNextStepNum(cur) {
   if (next === 8 && !gfIsStep8Applicable()) {
     next = 9;
   }
+  // Skip step 10 (name) if Trestle returned name data
+  if (next === 10 && gfTrestle.ready && gfTrestle.firstName && gfTrestle.lastName) {
+    gfd.firstName = gfTrestle.firstName;
+    gfd.lastName = gfTrestle.lastName;
+    next = 11;
+  }
+  // Skip step 11 (email) if Trestle returned email
+  if (next === 11 && gfTrestle.ready && gfTrestle.email) {
+    gfd.email = gfTrestle.email;
+    next = 12;
+  }
   return next;
 }
 
 function gfPrevStepNum(cur) {
   var prev = cur - 1;
+  if (prev === 11 && gfTrestle.ready && gfTrestle.email) prev = 10;
+  if (prev === 10 && gfTrestle.ready && gfTrestle.firstName && gfTrestle.lastName) prev = 9;
   if (prev === 8 && !gfIsStep8Applicable()) prev = 7;
   if (prev === 6 && gfSkipStateStep()) prev = 5;
   if (prev < 1) prev = 1;
@@ -708,13 +737,49 @@ var GF_STEP_META = {
   6:  { name: 'state',         text: function(){ return gfd.stateText; } },
   7:  { name: 'zipcode',       text: function(){ return gfd.zipcode; } },
   8:  { name: 'insured',       text: function(){ return GF_LABELS.insured[gfd.insured]              || gfd.insured; } },
-  9:  { name: 'describe',      text: function(){ return gfd.describe; } },
+  9:  { name: 'phone',         text: function(){ return gfd.phone; } },
   10: { name: 'name',          text: function(){ return gfd.firstName + ' ' + gfd.lastName; } },
   11: { name: 'email',         text: function(){ return gfd.email; } },
-  12: { name: 'phone',         text: function(){ return gfd.phone; } }
+  12: { name: 'describe',      text: function(){ return gfd.describe; } }
 };
 
 var gfFormCompleted = false;
+
+// ── Trestle phone lookup ────────────────────────────────────
+var gfTrestle = { firstName: '', lastName: '', email: '', ready: false };
+var gfTrestlePromise = null;
+
+function gfTrestleLookup(phone) {
+  var clean = phone.replace(/\D/g, '');
+  if (clean.length < 10) return;
+  gfTrestle.ready = false;
+
+  // Test mode: fake data for 5555555555
+  if (clean === '5555555555') {
+    gfTrestle.firstName = 'John';
+    gfTrestle.lastName = 'TestUser';
+    gfTrestle.email = 'john.test@example.com';
+    gfTrestle.ready = true;
+    gfTrestlePromise = Promise.resolve();
+    return;
+  }
+
+  gfTrestlePromise = fetch('https://trestle-lookup.pablo-df9.workers.dev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone: clean })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.success && data.data) {
+      gfTrestle.firstName = data.data.firstName || '';
+      gfTrestle.lastName = data.data.lastName || '';
+      gfTrestle.email = data.data.email || '';
+    }
+    gfTrestle.ready = true;
+  })
+  .catch(function() { gfTrestle.ready = true; });
+}
 
 // ── Read all UTM params once on load ─────────────────────────
 var gfUtms = (function() {
@@ -797,6 +862,20 @@ document.addEventListener('visibilitychange', function() {
 function gfAdvance() {
   if (!gfValidate(gfCurStep)) return;
   gfTrackStep(gfCurStep);
+
+  // Wait briefly for Trestle lookup when leaving phone step
+  if (gfCurStep === 9 && gfTrestlePromise && !gfTrestle.ready) {
+    Promise.race([
+      gfTrestlePromise,
+      new Promise(function(r) { setTimeout(r, 2000); })
+    ]).then(function() {
+      var next = gfNextStepNum(gfCurStep);
+      if (next > TOTAL_STEPS) { gfSubmit(); return; }
+      gfShowStep(next);
+    });
+    return;
+  }
+
   var next = gfNextStepNum(gfCurStep);
   if (next > TOTAL_STEPS) { gfSubmit(); return; }
   gfShowStep(next);
@@ -906,19 +985,11 @@ function gfBuildPayload() {
 
 // ── Submit ─────────────────────────────────────────────────────
 function gfSubmit() {
-  var ok = true;
-  var phoneDigits = gfd.phone.replace(/\D/g, '');
-  if (phoneDigits.length !== 10 || /^[01]/.test(phoneDigits) || /^(\d)\1{9}$/.test(phoneDigits)) {
-    var e = document.getElementById('gf-err-12a');
+  if (!gfd.describe || gfd.describe.trim().length < 5) {
+    var e = document.getElementById('gf-err-12');
     if (e) e.style.display = 'block';
-    ok = false;
+    return;
   }
-  if (!gfd.agree) {
-    var e2 = document.getElementById('gf-err-12b');
-    if (e2) e2.style.display = 'block';
-    ok = false;
-  }
-  if (!ok) return;
 
   // Show complete screen immediately — don't wait for webhook
   document.querySelectorAll('.gf-step').forEach(function(el){ el.classList.remove('active'); });
