@@ -137,3 +137,51 @@
 }
 
 .cah-utm-grid h2 { margin-top: 0; }
+
+.cah-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    margin: 16px 0;
+    padding: 14px 16px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+}
+
+.cah-filters label {
+    display: flex;
+    flex-direction: column;
+    font-size: 12px;
+    color: #50575e;
+    gap: 4px;
+}
+
+.cah-filters input[type="text"],
+.cah-filters input[type="date"],
+.cah-filters select {
+    min-width: 140px;
+}
+
+.cah-summary {
+    color: #50575e;
+    font-size: 13px;
+    margin: 4px 0 8px;
+}
+
+.cah-leads-table pre {
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    padding: 10px 12px;
+    font-size: 11px;
+    max-height: 320px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.cah-make { font-size: 11px; text-transform: uppercase; letter-spacing: .3px; padding: 2px 6px; border-radius: 3px; }
+.cah-make-pending  { background: #e2e3e5; color: #383d41; }
+.cah-make-success  { background: #d1e7dd; color: #0f5132; }
+.cah-make-failed   { background: #f8d7da; color: #842029; }

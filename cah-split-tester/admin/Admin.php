@@ -41,6 +41,7 @@ final class Admin
         \add_action('admin_post_cah_split_delete_test', [$this, 'handleDeleteTest']);
         \add_action('admin_post_cah_split_clone_test', [$this, 'handleCloneTest']);
         \add_action('admin_post_cah_split_toggle_status', [$this, 'handleToggleStatus']);
+        \add_action('admin_post_cah_split_export_leads', [$this, 'handleLeadsExport']);
     }
 
     public function registerMenu(): void
@@ -198,7 +199,119 @@ final class Admin
 
     public function renderLeads(): void
     {
-        $this->renderView('leads-list');
+        $filters = $this->parseLeadFilters();
+        $page    = isset($_GET['paged']) ? \max(1, (int) $_GET['paged']) : 1;
+        $perPage = 50;
+
+        $this->renderView('leads-list', [
+            'leads'       => $this->leads->query($filters, $page, $perPage),
+            'totalLeads'  => $this->leads->count($filters),
+            'page'        => $page,
+            'perPage'     => $perPage,
+            'filters'     => $filters,
+            'allTests'    => $this->tests->all(),
+            'allVariants' => $this->variants->all(),
+        ]);
+    }
+
+    public function handleLeadsExport(): void
+    {
+        $this->assertCap();
+        \check_admin_referer('cah_split_export_leads');
+
+        $filters  = $this->parseLeadFilters();
+        $filename = 'cah-leads-' . \gmdate('Y-m-d-His') . '.csv';
+
+        while (\ob_get_level() > 0) {
+            \ob_end_clean();
+        }
+
+        \nocache_headers();
+        \header('Content-Type: text/csv; charset=utf-8');
+        \header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+        $output = \fopen('php://output', 'w');
+        \fputcsv($output, [
+            'id', 'created_at', 'test_id', 'variant_id', 'visitor_id',
+            'first_name', 'last_name', 'email', 'phone', 'state', 'zipcode',
+            'service_type', 'attorney', 'fault', 'injury', 'timeframe', 'insured',
+            'describe_accident', 'lead_stage',
+            'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+            'utm_adname', 'utm_adid', 'utm_adsetid', 'utm_adsetname',
+            'utm_campaignid', 'utm_placement', 'utm_sitesourcename', 'utm_creative', 'utm_state',
+            'clickid', 'trustedform_cert_url', 'make_status', 'make_attempts', 'make_forwarded_at',
+        ]);
+
+        $this->leads->streamForExport(
+            $filters,
+            static function (array $row) use ($output): void {
+                \fputcsv($output, [
+                    $row['id'] ?? '',
+                    $row['created_at'] ?? '',
+                    $row['test_id'] ?? '',
+                    $row['variant_id'] ?? '',
+                    $row['visitor_id'] ?? '',
+                    $row['first_name'] ?? '',
+                    $row['last_name'] ?? '',
+                    $row['email'] ?? '',
+                    $row['phone'] ?? '',
+                    $row['state'] ?? '',
+                    $row['zipcode'] ?? '',
+                    $row['service_type'] ?? '',
+                    $row['attorney'] ?? '',
+                    $row['fault'] ?? '',
+                    $row['injury'] ?? '',
+                    $row['timeframe'] ?? '',
+                    $row['insured'] ?? '',
+                    $row['describe_accident'] ?? '',
+                    $row['lead_stage'] ?? '',
+                    $row['utm_source'] ?? '',
+                    $row['utm_medium'] ?? '',
+                    $row['utm_campaign'] ?? '',
+                    $row['utm_term'] ?? '',
+                    $row['utm_content'] ?? '',
+                    $row['utm_adname'] ?? '',
+                    $row['utm_adid'] ?? '',
+                    $row['utm_adsetid'] ?? '',
+                    $row['utm_adsetname'] ?? '',
+                    $row['utm_campaignid'] ?? '',
+                    $row['utm_placement'] ?? '',
+                    $row['utm_sitesourcename'] ?? '',
+                    $row['utm_creative'] ?? '',
+                    $row['utm_state'] ?? '',
+                    $row['clickid'] ?? '',
+                    $row['trustedform_cert_url'] ?? '',
+                    $row['make_status'] ?? '',
+                    $row['make_attempts'] ?? '',
+                    $row['make_forwarded_at'] ?? '',
+                ]);
+            }
+        );
+
+        \fclose($output);
+        exit;
+    }
+
+    private function parseLeadFilters(): array
+    {
+        $filters = [
+            'test_id'    => isset($_GET['test_id']) ? (int) $_GET['test_id'] : 0,
+            'variant_id' => isset($_GET['variant_id']) ? (int) $_GET['variant_id'] : 0,
+            'lead_stage' => isset($_GET['lead_stage']) ? \sanitize_key((string) $_GET['lead_stage']) : '',
+            'utm_source' => isset($_GET['utm_source']) ? \sanitize_text_field((string) $_GET['utm_source']) : '',
+            'state'      => isset($_GET['state']) ? \sanitize_text_field((string) $_GET['state']) : '',
+            'email'      => isset($_GET['email']) ? \sanitize_text_field((string) $_GET['email']) : '',
+            'phone'      => isset($_GET['phone']) ? \sanitize_text_field((string) $_GET['phone']) : '',
+        ];
+        $from = isset($_GET['from']) ? \sanitize_text_field((string) $_GET['from']) : '';
+        $to   = isset($_GET['to']) ? \sanitize_text_field((string) $_GET['to']) : '';
+        if (\preg_match('/^\d{4}-\d{2}-\d{2}$/', $from)) {
+            $filters['from'] = $from . ' 00:00:00';
+        }
+        if (\preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)) {
+            $filters['to'] = $to . ' 23:59:59';
+        }
+        return $filters;
     }
 
     public function renderSettings(): void

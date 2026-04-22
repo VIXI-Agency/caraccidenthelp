@@ -16,6 +16,25 @@ final class VariantsRepository
         return $wpdb->prefix . 'cah_variants';
     }
 
+    public function all(): array
+    {
+        global $wpdb;
+        $table = $this->table();
+        $rows = $wpdb->get_results(
+            "SELECT v.*, t.name AS test_name FROM {$table} v
+             LEFT JOIN {$wpdb->prefix}cah_tests t ON t.id = v.test_id
+             ORDER BY t.name ASC, v.sort_order ASC, v.id ASC",
+            ARRAY_A
+        );
+        if (!\is_array($rows)) {
+            return [];
+        }
+        foreach ($rows as &$row) {
+            $row['name'] = ($row['test_name'] ?? '') . ' / ' . ($row['name'] ?? '');
+        }
+        return $rows;
+    }
+
     public function forTest(int $testId): array
     {
         global $wpdb;
