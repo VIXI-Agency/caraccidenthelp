@@ -1,0 +1,26 @@
+.cah-split-wrap { max-width: 1200px; }
+
+.cah-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.cah-card {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 16px 20px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+}
+
+.cah-card h2 {
+    margin-top: 0;
+    font-size: 14px;
+    color: #1d2327;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.cah-card p { color: #50575e; }

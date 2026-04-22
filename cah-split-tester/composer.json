@@ -1,0 +1,23 @@
+{
+    "name": "vixi/cah-split-tester",
+    "description": "Generic A/B/N split testing plugin for caraccidenthelp.net. WordPress is source of truth for leads; Make.com is forwarded server-side.",
+    "type": "wordpress-plugin",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "VIXI\\CahSplit\\": "includes/",
+            "VIXI\\CahSplit\\Admin\\": "admin/"
+        }
+    },
+    "config": {
+        "vendor-dir": "vendor",
+        "optimize-autoloader": true,
+        "sort-packages": true,
+        "platform": {
+            "php": "8.1"
+        }
+    }
+}
