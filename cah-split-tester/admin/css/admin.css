@@ -80,3 +80,60 @@
     padding: 10px 14px;
     margin: 12px 0;
 }
+
+.cah-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 20px 0 24px;
+}
+
+.cah-metric {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cah-metric-label {
+    font-size: 12px;
+    color: #50575e;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.cah-metric-value {
+    font-size: 28px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.cah-metric-sub { font-size: 12px; color: #50575e; }
+
+.cah-daterange {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin: 16px 0;
+}
+.cah-daterange label { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+
+.cah-chart-wrap {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 24px;
+    min-height: 240px;
+}
+
+.cah-utm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+}
+
+.cah-utm-grid h2 { margin-top: 0; }

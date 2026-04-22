@@ -7,6 +7,7 @@ namespace VIXI\CahSplit;
 use VIXI\CahSplit\Admin\Admin;
 use VIXI\CahSplit\Repositories\LeadsRepository;
 use VIXI\CahSplit\Repositories\PageviewsRepository;
+use VIXI\CahSplit\Repositories\StatsRepository;
 use VIXI\CahSplit\Repositories\TestsRepository;
 use VIXI\CahSplit\Repositories\VariantsRepository;
 
@@ -23,6 +24,7 @@ final class Plugin
     public readonly VariantsRepository $variants;
     public readonly LeadsRepository $leads;
     public readonly PageviewsRepository $pageviews;
+    public readonly StatsRepository $stats;
     public readonly LeadStage $leadStage;
     public readonly LeadPayloadParser $parser;
     public readonly MakeForwarder $forwarder;
@@ -39,6 +41,7 @@ final class Plugin
         $this->variants        = new VariantsRepository();
         $this->leads           = new LeadsRepository();
         $this->pageviews       = new PageviewsRepository();
+        $this->stats           = new StatsRepository();
         $this->leadStage       = new LeadStage();
         $this->parser          = new LeadPayloadParser();
         $this->forwarder       = new MakeForwarder($this->settings, $this->leads);
@@ -53,7 +56,13 @@ final class Plugin
             $this->forwarder,
         );
         $this->cron            = new Cron($this->forwarder);
-        $this->admin           = new Admin($this->settings, $this->tests, $this->variants, $this->leads);
+        $this->admin           = new Admin(
+            $this->settings,
+            $this->tests,
+            $this->variants,
+            $this->leads,
+            $this->stats,
+        );
     }
 
     public static function instance(): self

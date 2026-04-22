@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace VIXI\CahSplit\Admin;
 
 use VIXI\CahSplit\Repositories\LeadsRepository;
+use VIXI\CahSplit\Repositories\StatsRepository;
 use VIXI\CahSplit\Repositories\TestsRepository;
 use VIXI\CahSplit\Repositories\VariantsRepository;
 use VIXI\CahSplit\Settings;
@@ -27,6 +28,7 @@ final class Admin
         private readonly TestsRepository $tests,
         private readonly VariantsRepository $variants,
         private readonly LeadsRepository $leads,
+        private readonly StatsRepository $stats,
     ) {
     }
 
@@ -110,12 +112,34 @@ final class Admin
             CAH_SPLIT_VERSION,
             true
         );
+
+        $action = isset($_GET['action']) ? \sanitize_key((string) $_GET['action']) : '';
+        $page   = isset($_GET['page']) ? \sanitize_key((string) $_GET['page']) : '';
+        $needsChart = ($page === self::MENU_SLUG)
+            || ($page === self::TESTS_SLUG && $action === 'detail');
+        if ($needsChart) {
+            \wp_enqueue_script(
+                'cah-split-chartjs',
+                'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
+                [],
+                '4.4.0',
+                true
+            );
+        }
     }
 
     public function renderDashboard(): void
     {
-        $tests = $this->tests->all();
-        $this->renderView('dashboard', ['tests' => $tests]);
+        $tests    = $this->tests->all();
+        $overview = $this->stats->overview(30);
+        $ids      = \array_map(static fn(array $t): int => (int) $t['id'], $tests);
+        $quick    = $this->stats->quickStatsForTests($ids, 30);
+        $this->renderView('dashboard', [
+            'tests'      => $tests,
+            'overview'   => $overview,
+            'quickStats' => $quick,
+            'variants'   => $this->variants,
+        ]);
     }
 
     public function renderTests(): void
@@ -131,10 +155,45 @@ final class Admin
             ]);
             return;
         }
+        if ($action === 'detail') {
+            $id   = isset($_GET['test_id']) ? (int) $_GET['test_id'] : 0;
+            $test = $id > 0 ? $this->tests->find($id) : null;
+            if ($test === null) {
+                $this->redirectTo(self::TESTS_SLUG);
+                return;
+            }
+            [$from, $to] = $this->parseDateRange();
+            $this->renderView('test-detail', [
+                'test'         => $test,
+                'variantStats' => $this->stats->perVariant($id, $from, $to),
+                'series'       => $this->stats->dailySeries($id, $from, $to),
+                'utmSource'    => $this->stats->byUtm($id, 'utm_source', $from, $to),
+                'utmCampaign'  => $this->stats->byUtm($id, 'utm_campaign', $from, $to),
+                'from'         => $from,
+                'to'           => $to,
+            ]);
+            return;
+        }
         $this->renderView('tests-list', [
             'tests'    => $this->tests->all(),
             'variants' => $this->variants,
         ]);
+    }
+
+    private function parseDateRange(): array
+    {
+        $now  = \current_time('timestamp');
+        $from = isset($_GET['from']) ? \sanitize_text_field((string) $_GET['from']) : '';
+        $to   = isset($_GET['to']) ? \sanitize_text_field((string) $_GET['to']) : '';
+
+        if (!\preg_match('/^\d{4}-\d{2}-\d{2}$/', $from)) {
+            $from = \gmdate('Y-m-d', $now - 29 * DAY_IN_SECONDS);
+        }
+        if (!\preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)) {
+            $to = \gmdate('Y-m-d', $now);
+        }
+
+        return [$from . ' 00:00:00', $to . ' 23:59:59'];
     }
 
     public function renderLeads(): void
