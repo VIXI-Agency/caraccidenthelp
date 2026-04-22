@@ -3,7 +3,7 @@ Contributors: vixi-agency
 Tags: a/b testing, split testing, lead generation
 Requires at least: 6.2
 Requires PHP: 8.1
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: Proprietary
 
 Generic A/B/N split testing for caraccidenthelp.net. WordPress is the source of truth for leads; Make.com is forwarded server-side after the lead is persisted.
@@ -35,6 +35,11 @@ The plugin ships with a hand-rolled PSR-4 autoloader used as a fallback when no 
 from the plugin root. No runtime dependencies are required.
 
 == Changelog ==
+
+= 1.0.1 =
+* Replace the HTML-file text input with a dropdown of files actually present in the plugin's variants/ directory, so admins cannot save a filename that doesn't exist on disk. The dropdown includes an "External URL" option for off-file variants and preserves any previously-saved filename marked as "(missing)" so it can be corrected.
+* VariantRenderer error message now reports the filename it tried to load and lists the files currently available, making misconfiguration self-diagnosing.
+* Admin JS reindexes select elements (not just inputs) when rows are added or removed.
 
 = 1.0.0 =
 * Phase 6: two-proportion z-test significance badge (informational only, no auto-actions) on test detail; manual "Prune old pageviews" tool in Settings; manual "Retry failed Make.com forwards" button in Settings and Dashboard banner.

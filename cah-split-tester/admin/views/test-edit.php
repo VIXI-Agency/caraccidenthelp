@@ -6,6 +6,7 @@ if (!defined('ABSPATH')) {
 
 use VIXI\CahSplit\Admin\Admin;
 use VIXI\CahSplit\Repositories\TestsRepository;
+use VIXI\CahSplit\VariantRenderer;
 
 /** @var array<string,mixed>|null $test */
 /** @var array<int,array<string,mixed>> $variants */
@@ -26,6 +27,8 @@ if (empty($variants)) {
         ['name' => '', 'slug' => '', 'url' => '', 'html_file' => '', 'weight' => 50, 'sort_order' => 1],
     ];
 }
+
+$availableFiles = VariantRenderer::availableFiles();
 ?>
 <div class="wrap cah-split-wrap">
     <h1 class="wp-heading-inline">
@@ -96,10 +99,22 @@ if (empty($variants)) {
 
         <h2><?php esc_html_e('Variants', 'cah-split'); ?></h2>
         <p class="description">
-            <?php esc_html_e('Weights must sum to 100. For plugin-hosted variants, drop the HTML file into the plugin\'s variants/ directory and enter its filename.', 'cah-split'); ?>
+            <?php esc_html_e('Weights must sum to 100. For plugin-hosted variants, drop an HTML file into the plugin\'s variants/ directory (via FTP/SSH) and select it below. For external variants, leave the dropdown on "External URL" and fill the URL field.', 'cah-split'); ?>
         </p>
+        <?php if (empty($availableFiles)) : ?>
+            <div class="notice notice-warning inline">
+                <p><?php esc_html_e('No .html files detected in the plugin\'s variants/ directory. Upload at least one (e.g. v1.html) before creating plugin-hosted variants.', 'cah-split'); ?></p>
+            </div>
+        <?php else : ?>
+            <p class="description">
+                <?php printf(
+                    esc_html__('Files available on disk: %s', 'cah-split'),
+                    '<code>' . esc_html(implode('</code>, <code>', $availableFiles)) . '</code>'
+                ); ?>
+            </p>
+        <?php endif; ?>
 
-        <table class="widefat cah-variants-table" id="cah-variants-table">
+        <table class="widefat cah-variants-table" id="cah-variants-table" data-available-files="<?php echo esc_attr(wp_json_encode($availableFiles)); ?>">
             <thead>
                 <tr>
                     <th><?php esc_html_e('Name', 'cah-split'); ?></th>
@@ -111,12 +126,29 @@ if (empty($variants)) {
                 </tr>
             </thead>
             <tbody>
-                <?php foreach (array_values($variants) as $i => $v) : ?>
+                <?php foreach (array_values($variants) as $i => $v) :
+                    $stored = (string) ($v['html_file'] ?? '');
+                    $options = $availableFiles;
+                    if ($stored !== '' && !in_array($stored, $options, true)) {
+                        $options[] = $stored;
+                    }
+                    ?>
                     <tr class="cah-variant-row">
                         <td><input type="text" name="variants[<?php echo (int) $i; ?>][name]" value="<?php echo esc_attr((string) ($v['name'] ?? '')); ?>" class="regular-text" /></td>
                         <td><input type="text" name="variants[<?php echo (int) $i; ?>][slug]" value="<?php echo esc_attr((string) ($v['slug'] ?? '')); ?>" class="code" /></td>
-                        <td><input type="text" name="variants[<?php echo (int) $i; ?>][html_file]" value="<?php echo esc_attr((string) ($v['html_file'] ?? '')); ?>" placeholder="v1.html" class="code" /></td>
-                        <td><input type="url" name="variants[<?php echo (int) $i; ?>][url]" value="<?php echo esc_attr((string) ($v['url'] ?? '')); ?>" placeholder="<?php esc_attr_e('leave empty if using HTML file', 'cah-split'); ?>" /></td>
+                        <td>
+                            <select name="variants[<?php echo (int) $i; ?>][html_file]" class="cah-html-file">
+                                <option value=""><?php esc_html_e('— External URL —', 'cah-split'); ?></option>
+                                <?php foreach ($options as $file) :
+                                    $missing = !in_array($file, $availableFiles, true);
+                                    ?>
+                                    <option value="<?php echo esc_attr($file); ?>" <?php selected($stored, $file); ?>>
+                                        <?php echo esc_html($file); ?><?php echo $missing ? ' ' . esc_html__('(missing)', 'cah-split') : ''; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                        <td><input type="url" name="variants[<?php echo (int) $i; ?>][url]" value="<?php echo esc_attr((string) ($v['url'] ?? '')); ?>" placeholder="<?php esc_attr_e('leave empty if using an HTML file', 'cah-split'); ?>" /></td>
                         <td><input type="number" min="0" max="100" step="1" name="variants[<?php echo (int) $i; ?>][weight]" value="<?php echo esc_attr((string) ($v['weight'] ?? 0)); ?>" class="small-text cah-weight" /></td>
                         <td><button type="button" class="button-link-delete cah-remove-variant"><?php esc_html_e('Remove', 'cah-split'); ?></button></td>
                     </tr>

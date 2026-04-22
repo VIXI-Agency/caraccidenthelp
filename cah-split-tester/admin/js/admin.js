@@ -29,12 +29,28 @@
             if (!tbody) { return; }
             var rows = tbody.querySelectorAll('tr.cah-variant-row');
             rows.forEach(function (row, i) {
-                row.querySelectorAll('input').forEach(function (input) {
-                    var name = input.getAttribute('name') || '';
+                row.querySelectorAll('input, select').forEach(function (field) {
+                    var name = field.getAttribute('name') || '';
                     var updated = name.replace(/variants\[\d+\]/, 'variants[' + i + ']');
-                    input.setAttribute('name', updated);
+                    field.setAttribute('name', updated);
                 });
             });
+        }
+
+        function availableFiles() {
+            if (!table) { return []; }
+            var raw = table.getAttribute('data-available-files') || '[]';
+            try { return JSON.parse(raw); } catch (e) { return []; }
+        }
+
+        function htmlFileSelect(index) {
+            var files = availableFiles();
+            var opts = '<option value="">— External URL —</option>';
+            for (var i = 0; i < files.length; i++) {
+                var f = files[i];
+                opts += '<option value="' + f.replace(/"/g, '&quot;') + '">' + f + '</option>';
+            }
+            return '<select name="variants[' + index + '][html_file]" class="cah-html-file">' + opts + '</select>';
         }
 
         function addRow() {
@@ -45,7 +61,7 @@
             tr.innerHTML =
                 '<td><input type="text" name="variants[' + index + '][name]" class="regular-text" /></td>' +
                 '<td><input type="text" name="variants[' + index + '][slug]" class="code" /></td>' +
-                '<td><input type="text" name="variants[' + index + '][html_file]" placeholder="v1.html" class="code" /></td>' +
+                '<td>' + htmlFileSelect(index) + '</td>' +
                 '<td><input type="url" name="variants[' + index + '][url]" /></td>' +
                 '<td><input type="number" min="0" max="100" step="1" name="variants[' + index + '][weight]" value="0" class="small-text cah-weight" /></td>' +
                 '<td><button type="button" class="button-link-delete cah-remove-variant">Remove</button></td>';

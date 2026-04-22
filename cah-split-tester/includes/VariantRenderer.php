@@ -21,10 +21,30 @@ final class VariantRenderer
             \status_header(404);
             return;
         }
-        $path = CAH_SPLIT_PLUGIN_DIR . 'variants/' . \basename($htmlFile);
+        $file = \basename($htmlFile);
+        $path = CAH_SPLIT_PLUGIN_DIR . 'variants/' . $file;
+
+        if (!\file_exists($path)) {
+            \status_header(500);
+            $available = self::availableFiles();
+            $hint = empty($available)
+                ? \__('No .html files are present in the plugin\'s variants/ directory.', 'cah-split')
+                : \sprintf(\__('Available files: %s', 'cah-split'), \implode(', ', $available));
+            echo \esc_html(\sprintf(
+                /* translators: %1$s: html file name, %2$s: hint listing available files */
+                \__('Variant file "%1$s" was not found in the plugin\'s variants/ directory. %2$s', 'cah-split'),
+                $file,
+                $hint
+            ));
+            return;
+        }
         if (!\is_readable($path)) {
             \status_header(500);
-            echo \esc_html__('Variant file is missing or unreadable.', 'cah-split');
+            echo \esc_html(\sprintf(
+                /* translators: %s: html file name */
+                \__('Variant file "%s" exists but is not readable. Check file permissions.', 'cah-split'),
+                $file
+            ));
             return;
         }
 
@@ -34,6 +54,21 @@ final class VariantRenderer
         \nocache_headers();
         \header('Content-Type: text/html; charset=' . \get_bloginfo('charset'));
         echo $html;
+    }
+
+    public static function availableFiles(): array
+    {
+        $dir = CAH_SPLIT_PLUGIN_DIR . 'variants/';
+        $matches = \glob($dir . '*.html');
+        if (!\is_array($matches)) {
+            return [];
+        }
+        $out = [];
+        foreach ($matches as $path) {
+            $out[] = \basename($path);
+        }
+        \sort($out);
+        return $out;
     }
 
     private function injectTrackingScripts(string $html, array $test, array $variant, string $visitorId): string
