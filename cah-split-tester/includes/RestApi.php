@@ -135,8 +135,13 @@ final class RestApi
             ], 500);
         }
 
+        // Forward to Make.com in BLOCKING mode so make_status is updated correctly.
+        // Non-blocking mode previously returned true without ever calling
+        // markForwardSuccess() / markForwardFailed(), leaving every lead stuck at
+        // make_status=pending indefinitely. Blocking adds ~1-3s latency but is the
+        // only way MakeForwarder reads the response and updates status.
         try {
-            $this->forwarder->forward($leadId, $makePayload, false);
+            $this->forwarder->forward($leadId, $makePayload, true);
         } catch (\Throwable $e) {
             \error_log('[cah-split] Make forward dispatch failed: ' . $e->getMessage());
         }

@@ -71,11 +71,23 @@ final class LeadsRepository
     {
         global $wpdb;
         $table = $this->table();
+        // Pick up both explicitly-failed rows AND stuck-pending rows (>=5 minutes old).
+        // The latter guards against non-blocking dispatch paths that never updated
+        // status, or crashes between insert and forward(). created_at is MySQL
+        // datetime in WP-local time; the 5-min window is measured against NOW().
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$table} WHERE make_status = %s AND make_attempts < %d ORDER BY id ASC LIMIT %d",
-                self::MAKE_STATUS_FAILED,
+                "SELECT * FROM {$table}
+                 WHERE make_attempts < %d
+                   AND (
+                     make_status = %s
+                     OR (make_status = %s AND created_at < (NOW() - INTERVAL 5 MINUTE))
+                   )
+                 ORDER BY id ASC
+                 LIMIT %d",
                 $maxAttempts,
+                self::MAKE_STATUS_FAILED,
+                self::MAKE_STATUS_PENDING,
                 $limit
             ),
             ARRAY_A
@@ -88,9 +100,15 @@ final class LeadsRepository
         global $wpdb;
         $table = $this->table();
         return (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$table} WHERE make_status = %s AND make_attempts < %d",
+            "SELECT COUNT(*) FROM {$table}
+             WHERE make_attempts < %d
+               AND (
+                 make_status = %s
+                 OR (make_status = %s AND created_at < (NOW() - INTERVAL 5 MINUTE))
+               )",
+            $maxAttempts,
             self::MAKE_STATUS_FAILED,
-            $maxAttempts
+            self::MAKE_STATUS_PENDING
         ));
     }
 

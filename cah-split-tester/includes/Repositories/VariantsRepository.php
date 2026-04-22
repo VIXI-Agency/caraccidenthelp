@@ -75,6 +75,16 @@ final class VariantsRepository
         return \is_array($row) ? $row : null;
     }
 
+    /**
+     * Sync variants for a test using UPSERT semantics.
+     *
+     * - Rows whose POST'd id matches an existing row are UPDATED (preserves variant_id → lead FK integrity).
+     * - Rows without id (newly added in the form) are INSERTED.
+     * - Existing rows whose id is not present in the submitted set are DELETED.
+     *
+     * This replaces the pre-1.0.5 DELETE-then-INSERT behavior that caused variant_id to
+     * increment on every save and broke referential integrity with historical leads.
+     */
     public function replaceAll(int $testId, string $testSlug, array $variants): void
     {
         $weights = \array_map(static fn(array $v): int => (int) ($v['weight'] ?? 0), $variants);
@@ -95,10 +105,17 @@ final class VariantsRepository
         global $wpdb;
         $table = $this->table();
 
-        $wpdb->delete($table, ['test_id' => $testId]);
+        // Load existing rows keyed by id so we can detect inserts vs updates vs deletes.
+        $existing       = $this->forTest($testId);
+        $existingById   = [];
+        foreach ($existing as $row) {
+            $existingById[(int) $row['id']] = $row;
+        }
 
-        $now      = \current_time('mysql');
-        $usedSlugs = [];
+        $now           = \current_time('mysql');
+        $usedSlugs     = [];
+        $keptIds       = [];
+
         foreach (\array_values($visible) as $index => $variant) {
             $name = \sanitize_text_field((string) ($variant['name'] ?? ''));
             $slug = \sanitize_title((string) ($variant['slug'] ?? $name));
@@ -106,7 +123,7 @@ final class VariantsRepository
                 $slug = 'variant-' . ($index + 1);
             }
             $originalSlug = $slug;
-            $suffix = 1;
+            $suffix       = 1;
             while (\in_array($slug, $usedSlugs, true)) {
                 $slug = $originalSlug . '-' . (++$suffix);
             }
@@ -130,7 +147,8 @@ final class VariantsRepository
                 ));
             }
 
-            $wpdb->insert($table, [
+            $submittedId = isset($variant['id']) ? (int) $variant['id'] : 0;
+            $data        = [
                 'test_id'    => $testId,
                 'name'       => $name,
                 'slug'       => $slug,
@@ -138,8 +156,27 @@ final class VariantsRepository
                 'html_file'  => $htmlFile,
                 'weight'     => (int) ($variant['weight'] ?? 0),
                 'sort_order' => (int) ($variant['sort_order'] ?? $index),
-                'created_at' => $now,
-            ]);
+            ];
+
+            if ($submittedId > 0 && isset($existingById[$submittedId])) {
+                // UPDATE: preserves id, keeps leads.variant_id FK valid.
+                $wpdb->update($table, $data, ['id' => $submittedId]);
+                $keptIds[] = $submittedId;
+            } else {
+                // INSERT: genuinely new variant.
+                $data['created_at'] = $now;
+                $wpdb->insert($table, $data);
+                $newId = (int) $wpdb->insert_id;
+                if ($newId > 0) {
+                    $keptIds[] = $newId;
+                }
+            }
+        }
+
+        // DELETE rows that the admin removed from the form (not in $keptIds).
+        $toDelete = \array_diff(\array_keys($existingById), $keptIds);
+        foreach ($toDelete as $deleteId) {
+            $wpdb->delete($table, ['id' => (int) $deleteId]);
         }
     }
 

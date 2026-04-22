@@ -135,14 +135,34 @@ final class Router
         $visitorId = $cookie['visitor_id'] ?? $this->generateVisitorId();
         $this->writeCookie($testId, (int) $variant['id'], $visitorId);
 
-        \nocache_headers();
-        if (!\headers_sent()) {
-            \header('X-LiteSpeed-Cache-Control: no-cache');
-        }
+        $this->sendNoCacheHeaders('router-redirect');
 
         $target = $this->appendQueryString((string) $variant['url']);
         \wp_redirect($target, 302);
         exit;
+    }
+
+    /**
+     * Aggressively mark the current response as non-cacheable across CDNs/caches.
+     * LiteSpeed was previously serving the 302 + variant pages from edge cache, which
+     * baked `visitor_id` into HTML and prevented Set-Cookie from reaching the browser.
+     * We now call the LiteSpeed ESI action hook in addition to WP's nocache_headers()
+     * and the raw X-LiteSpeed-Cache-Control header, so LSCache bypasses this request
+     * even when its own cache rules would otherwise hit.
+     */
+    private function sendNoCacheHeaders(string $reason): void
+    {
+        \nocache_headers();
+        if (!\headers_sent()) {
+            \header('X-LiteSpeed-Cache-Control: no-cache');
+            \header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private', true);
+            \header('Pragma: no-cache', true);
+        }
+        // LSCache public API — no-ops if LiteSpeed Cache plugin is inactive.
+        if (\function_exists('do_action')) {
+            \do_action('litespeed_control_set_nocache', 'cah-split:' . $reason);
+            \do_action('litespeed_control_set_private', 'cah-split:' . $reason);
+        }
     }
 
     private function ensureVisitorCookie(int $testId, int $variantId): string

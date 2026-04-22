@@ -134,6 +134,7 @@ $availableFiles = VariantRenderer::availableFiles();
                     }
                     ?>
                     <tr class="cah-variant-row">
+                        <input type="hidden" name="variants[<?php echo (int) $i; ?>][id]" value="<?php echo esc_attr((string) ($v['id'] ?? '')); ?>" />
                         <td><input type="text" name="variants[<?php echo (int) $i; ?>][name]" value="<?php echo esc_attr((string) ($v['name'] ?? '')); ?>" class="regular-text" /></td>
                         <td><input type="text" name="variants[<?php echo (int) $i; ?>][slug]" value="<?php echo esc_attr((string) ($v['slug'] ?? '')); ?>" class="code" /></td>
                         <td>
@@ -148,7 +149,7 @@ $availableFiles = VariantRenderer::availableFiles();
                                 <?php endforeach; ?>
                             </select>
                         </td>
-                        <td><input type="url" name="variants[<?php echo (int) $i; ?>][url]" value="<?php echo esc_attr((string) ($v['url'] ?? '')); ?>" placeholder="<?php esc_attr_e('leave empty if using an HTML file', 'cah-split'); ?>" /></td>
+                        <td><input type="text" inputmode="url" name="variants[<?php echo (int) $i; ?>][url]" value="<?php echo esc_attr((string) ($v['url'] ?? '')); ?>" placeholder="<?php esc_attr_e('leave empty if using an HTML file', 'cah-split'); ?>" /></td>
                         <td><input type="number" min="0" max="100" step="1" name="variants[<?php echo (int) $i; ?>][weight]" value="<?php echo esc_attr((string) ($v['weight'] ?? 0)); ?>" class="small-text cah-weight" /></td>
                         <td><button type="button" class="button-link-delete cah-remove-variant"><?php esc_html_e('Remove', 'cah-split'); ?></button></td>
                     </tr>

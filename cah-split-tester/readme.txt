@@ -3,7 +3,7 @@ Contributors: vixi-agency
 Tags: a/b testing, split testing, lead generation
 Requires at least: 6.2
 Requires PHP: 8.1
-Stable tag: 1.0.3
+Stable tag: 1.0.5
 License: Proprietary
 
 Generic A/B/N split testing for caraccidenthelp.net. WordPress is the source of truth for leads; Make.com is forwarded server-side after the lead is persisted.
@@ -35,6 +35,17 @@ The plugin ships with a hand-rolled PSR-4 autoloader used as a fallback when no 
 from the plugin root. No runtime dependencies are required.
 
 == Changelog ==
+
+= 1.0.5 =
+* Fix: `VariantsRepository::replaceAll()` now performs a true UPSERT keyed on the submitted variant id rather than DELETE-then-INSERT. Previously every test save would delete all variants and re-insert them, incrementing `variant_id` each time and breaking referential integrity with historical leads (e.g. a 2-variant test's ids would grow to 11, 12, ... after a handful of saves, and `leads.variant_id` would orphan-point to deleted rows). Rows matched by id are UPDATED in place, genuinely new rows are INSERTed, and rows removed from the form are DELETEd. The edit form now submits a hidden `variants[i][id]` to drive this.
+* Fix: uninstall cleanup now force-removes the plugin directory (with chmod fallback) if WP's filesystem abstraction left it behind, which happens on Hostinger/LiteSpeed hosts where the PHP uid differs from the web-server uid. Stale `cah-split-tester/` directories that survived a delete would previously block a fresh upload with a "destination folder already exists" error. Scoped strictly to our own plugin slug under wp-content/plugins/ for safety.
+
+= 1.0.4 =
+* Fix: switch Make.com forward to blocking mode in the /lead REST handler so `make_status` is actually updated to `success` / `failed`. Previously non-blocking dispatch returned true immediately and status stayed at `pending` forever, even though the HTTP request to Make was fired. Adds ~1–3s perceived latency at submit time but is the only way MakeForwarder sees the response.
+* Fix: `LeadsRepository::findRetryable()` now also picks up `pending` rows older than 5 minutes, so any legacy rows stuck from prior non-blocking dispatches self-heal via the hourly retry cron.
+* Fix: variant HTML submit handler now polls up to 2 seconds for `window.cahSplit.submitLead` to be attached (tracking.js is deferred), logging an error if it times out. Previously a fast user could submit before the deferred script attached and the lead would be silently lost while the 800ms thank-you redirect still ran.
+* Fix: Router and VariantRenderer now additionally call `do_action('litespeed_control_set_nocache', ...)` and `litespeed_control_set_private`, in addition to the existing `X-LiteSpeed-Cache-Control: no-cache` header, to work with LiteSpeed's newer ESI-driven cache control where raw headers alone are not honored if the request already hit the edge cache. Also emits an explicit full `Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private` header.
+* Fix: admin test-edit External URL input changed from `type="url"` to `type="text" inputmode="url"` so the browser does not block saves when the field contains a relative path like `/_cah/v/main/...`. Server-side validation of the field is unchanged.
 
 = 1.0.3 =
 * Bundle the site's public/ asset directory inside the plugin at variants/public/ and inject <base href="{plugin_url}variants/"> into every plugin-hosted variant so relative image/style URLs like public/logo-full.webp resolve correctly regardless of the variant URL path (was broken: relative paths resolved to /_cah/v/.../public/... and 404'd).

@@ -1028,10 +1028,27 @@ function gfSubmit() {
     localStorage.setItem('cah_lead_data', JSON.stringify(cahLeadData));
   } catch(e) {}
 
-  // Send to WordPress (plugin forwards to Make.com server-side), then redirect
-  var submit = (window.cahSplit && typeof window.cahSplit.submitLead === 'function')
-    ? window.cahSplit.submitLead(gfBuildPayload())
-    : Promise.resolve();
+  // Send to WordPress (plugin forwards to Make.com server-side), then redirect.
+  // tracking.js is loaded with `defer` so on very fast submits window.cahSplit.submitLead
+  // may not be attached yet. Poll up to ~2s before giving up — previously the code
+  // silently fell through to Promise.resolve() and the lead was lost.
+  function gfAwaitSubmitLead(payload, tries) {
+    tries = tries || 0;
+    if (window.cahSplit && typeof window.cahSplit.submitLead === 'function') {
+      return window.cahSplit.submitLead(payload);
+    }
+    if (tries >= 20) { // ~2s (20 * 100ms)
+      if (window.console && console.error) {
+        console.error('[cah-split] submitLead unavailable after 2s — lead not forwarded to WP');
+      }
+      return Promise.resolve({ success: false, reason: 'submitLead_unavailable' });
+    }
+    return new Promise(function (resolve) {
+      setTimeout(function () { resolve(gfAwaitSubmitLead(payload, tries + 1)); }, 100);
+    });
+  }
+
+  var submit = gfAwaitSubmitLead(gfBuildPayload());
   Promise.resolve(submit).catch(function(){}).finally(function(){
     if (redirectUrl) setTimeout(function(){ window.location.href = redirectUrl; }, 800);
   });

@@ -51,9 +51,18 @@ final class VariantRenderer
         $html = (string) \file_get_contents($path);
         $html = $this->injectTrackingScripts($html, $test, $variant, $visitorId);
 
+        // Variant HTML contains per-visitor visitor_id baked into window.cahSplit,
+        // so it MUST NOT be cached at the edge — otherwise every visitor gets the
+        // first-visitor's UUID and Set-Cookie never reaches the browser.
         \nocache_headers();
         if (!\headers_sent()) {
             \header('X-LiteSpeed-Cache-Control: no-cache');
+            \header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private', true);
+            \header('Pragma: no-cache', true);
+        }
+        if (\function_exists('do_action')) {
+            \do_action('litespeed_control_set_nocache', 'cah-split:variant-render');
+            \do_action('litespeed_control_set_private', 'cah-split:variant-render');
         }
         \header('Content-Type: text/html; charset=' . \get_bloginfo('charset'));
         echo $html;
