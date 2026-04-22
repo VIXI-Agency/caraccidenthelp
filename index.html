@@ -703,15 +703,17 @@ function gfNextStepNum(cur) {
   if (next === 8 && !gfIsStep8Applicable()) {
     next = 9;
   }
-  // Skip step 10 (name) if Trestle returned name data
+  // Skip step 10 (name) if Trestle returned name data — fire its event before skipping
   if (next === 10 && gfTrestle.ready && gfTrestle.firstName && gfTrestle.lastName) {
     gfd.firstName = gfTrestle.firstName;
     gfd.lastName = gfTrestle.lastName;
+    gfTrackStep(10);
     next = 11;
   }
-  // Skip step 11 (email) if Trestle returned email
+  // Skip step 11 (email) if Trestle returned email — fire its event before skipping
   if (next === 11 && gfTrestle.ready && gfTrestle.email) {
     gfd.email = gfTrestle.email;
+    gfTrackStep(11);
     next = 12;
   }
   return next;
