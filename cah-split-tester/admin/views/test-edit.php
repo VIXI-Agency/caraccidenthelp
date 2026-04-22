@@ -134,6 +134,7 @@ $availableFiles = VariantRenderer::availableFiles();
                     }
                     ?>
                     <tr class="cah-variant-row">
+                        <input type="hidden" name="variants[<?php echo (int) $i; ?>][id]" value="<?php echo esc_attr((string) ($v['id'] ?? '')); ?>" />
                         <td><input type="text" name="variants[<?php echo (int) $i; ?>][name]" value="<?php echo esc_attr((string) ($v['name'] ?? '')); ?>" class="regular-text" /></td>
                         <td><input type="text" name="variants[<?php echo (int) $i; ?>][slug]" value="<?php echo esc_attr((string) ($v['slug'] ?? '')); ?>" class="code" /></td>
                         <td>
