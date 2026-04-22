@@ -10,11 +10,23 @@ if (!defined('ABSPATH')) {
 
 final class Activator
 {
+    public const DB_VERSION_OPTION = 'cah_split_db_version';
+    public const FLUSH_FLAG_OPTION = 'cah_split_needs_rewrite_flush';
+
     public static function activate(): void
     {
         self::createTables();
         self::seedDefaultSettings();
-        \update_option('cah_split_db_version', CAH_SPLIT_VERSION);
+        \update_option(self::DB_VERSION_OPTION, CAH_SPLIT_VERSION);
+        \update_option(self::FLUSH_FLAG_OPTION, '1', false);
+    }
+
+    public static function migrateIfNeeded(): void
+    {
+        $stored = (string) \get_option(self::DB_VERSION_OPTION, '0.0.0');
+        if (\version_compare($stored, CAH_SPLIT_VERSION, '<')) {
+            self::activate();
+        }
     }
 
     private static function createTables(): void
@@ -29,24 +41,29 @@ final class Activator
         $tests = "CREATE TABLE {$prefix}cah_tests (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             name VARCHAR(191) NOT NULL,
+            slug VARCHAR(100) NOT NULL DEFAULT '',
             trigger_path VARCHAR(255) NOT NULL,
             status VARCHAR(20) NOT NULL DEFAULT 'draft',
             created_at DATETIME NOT NULL,
             updated_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
-            KEY idx_trigger_status (trigger_path, status)
+            KEY idx_trigger_status (trigger_path, status),
+            KEY idx_slug (slug)
         ) {$charsetCollate};";
 
         $variants = "CREATE TABLE {$prefix}cah_variants (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             test_id BIGINT UNSIGNED NOT NULL,
             name VARCHAR(191) NOT NULL,
+            slug VARCHAR(100) NOT NULL DEFAULT '',
             url VARCHAR(2048) NOT NULL,
+            html_file VARCHAR(255) DEFAULT NULL,
             weight TINYINT UNSIGNED NOT NULL DEFAULT 0,
             sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
-            KEY idx_test (test_id)
+            KEY idx_test (test_id),
+            KEY idx_test_slug (test_id, slug)
         ) {$charsetCollate};";
 
         $pageviews = "CREATE TABLE {$prefix}cah_pageviews (
@@ -109,6 +126,7 @@ final class Activator
             user_agent VARCHAR(500) DEFAULT NULL,
             make_forwarded_at DATETIME DEFAULT NULL,
             make_status VARCHAR(20) NOT NULL DEFAULT 'pending',
+            make_attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
             make_response LONGTEXT,
             raw_payload LONGTEXT,
             created_at DATETIME NOT NULL,
@@ -118,7 +136,8 @@ final class Activator
             KEY idx_stage (lead_stage),
             KEY idx_utm_source (utm_source),
             KEY idx_email (email),
-            KEY idx_phone (phone)
+            KEY idx_phone (phone),
+            KEY idx_make_status (make_status)
         ) {$charsetCollate};";
 
         \dbDelta($tests);

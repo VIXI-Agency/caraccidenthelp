@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace VIXI\CahSplit\Admin;
 
+use VIXI\CahSplit\Repositories\TestsRepository;
+use VIXI\CahSplit\Repositories\VariantsRepository;
 use VIXI\CahSplit\Settings;
 
 if (!defined('ABSPATH')) {
@@ -19,8 +21,11 @@ final class Admin
 
     public const CAPABILITY = 'manage_options';
 
-    public function __construct(private readonly Settings $settings)
-    {
+    public function __construct(
+        private readonly Settings $settings,
+        private readonly TestsRepository $tests,
+        private readonly VariantsRepository $variants,
+    ) {
     }
 
     public function boot(): void
@@ -28,6 +33,10 @@ final class Admin
         \add_action('admin_menu', [$this, 'registerMenu']);
         \add_action('admin_enqueue_scripts', [$this, 'enqueueAssets']);
         \add_action('admin_post_cah_split_save_settings', [$this, 'handleSaveSettings']);
+        \add_action('admin_post_cah_split_save_test', [$this, 'handleSaveTest']);
+        \add_action('admin_post_cah_split_delete_test', [$this, 'handleDeleteTest']);
+        \add_action('admin_post_cah_split_clone_test', [$this, 'handleCloneTest']);
+        \add_action('admin_post_cah_split_toggle_status', [$this, 'handleToggleStatus']);
     }
 
     public function registerMenu(): void
@@ -103,12 +112,27 @@ final class Admin
 
     public function renderDashboard(): void
     {
-        $this->renderView('dashboard');
+        $tests = $this->tests->all();
+        $this->renderView('dashboard', ['tests' => $tests]);
     }
 
     public function renderTests(): void
     {
-        $this->renderView('tests-list');
+        $action = isset($_GET['action']) ? \sanitize_key((string) $_GET['action']) : 'list';
+        if ($action === 'edit' || $action === 'new') {
+            $id = isset($_GET['test_id']) ? (int) $_GET['test_id'] : 0;
+            $test     = $id > 0 ? $this->tests->find($id) : null;
+            $variants = $id > 0 ? $this->variants->forTest($id) : [];
+            $this->renderView('test-edit', [
+                'test'     => $test,
+                'variants' => $variants,
+            ]);
+            return;
+        }
+        $this->renderView('tests-list', [
+            'tests'    => $this->tests->all(),
+            'variants' => $this->variants,
+        ]);
     }
 
     public function renderLeads(): void
@@ -123,10 +147,7 @@ final class Admin
 
     public function handleSaveSettings(): void
     {
-        if (!\current_user_can(self::CAPABILITY)) {
-            \wp_die(\esc_html__('You do not have permission to perform this action.', 'cah-split'));
-        }
-
+        $this->assertCap();
         \check_admin_referer('cah_split_save_settings', 'cah_split_nonce');
 
         $webhook    = \esc_url_raw((string) ($_POST['make_webhook_url'] ?? ''));
@@ -139,10 +160,123 @@ final class Admin
             'drop_tables_on_uninstall' => $dropTables,
         ]);
 
-        \wp_safe_redirect(\add_query_arg(
-            ['page' => self::SETTINGS_SLUG, 'updated' => '1'],
-            \admin_url('admin.php')
-        ));
+        $this->redirectTo(self::SETTINGS_SLUG, ['updated' => '1']);
+    }
+
+    public function handleSaveTest(): void
+    {
+        $this->assertCap();
+        \check_admin_referer('cah_split_save_test', 'cah_split_nonce');
+
+        $id = isset($_POST['test_id']) ? (int) $_POST['test_id'] : 0;
+
+        try {
+            $testId = $this->tests->save([
+                'name'         => (string) ($_POST['name'] ?? ''),
+                'slug'         => (string) ($_POST['slug'] ?? ''),
+                'trigger_path' => (string) ($_POST['trigger_path'] ?? ''),
+                'status'       => (string) ($_POST['status'] ?? 'draft'),
+            ], $id > 0 ? $id : null);
+
+            $test = $this->tests->find($testId);
+            if ($test === null) {
+                throw new \RuntimeException(\__('Test could not be loaded after save.', 'cah-split'));
+            }
+
+            $rawVariants = isset($_POST['variants']) && \is_array($_POST['variants'])
+                ? $_POST['variants']
+                : [];
+
+            $this->variants->replaceAll($testId, (string) $test['slug'], $rawVariants);
+
+            \update_option('cah_split_needs_rewrite_flush', '1', false);
+
+            $this->redirectTo(self::TESTS_SLUG, [
+                'action'  => 'edit',
+                'test_id' => (string) $testId,
+                'saved'   => '1',
+            ]);
+        } catch (\Throwable $e) {
+            \set_transient(
+                'cah_split_error_' . \get_current_user_id(),
+                $e->getMessage(),
+                60
+            );
+            $args = ['action' => 'edit', 'error' => '1'];
+            if ($id > 0) {
+                $args['test_id'] = (string) $id;
+            } else {
+                $args['action'] = 'new';
+            }
+            $this->redirectTo(self::TESTS_SLUG, $args);
+        }
+    }
+
+    public function handleDeleteTest(): void
+    {
+        $this->assertCap();
+        \check_admin_referer('cah_split_delete_test');
+
+        $id = isset($_GET['test_id']) ? (int) $_GET['test_id'] : 0;
+        if ($id > 0) {
+            $this->tests->delete($id);
+        }
+        $this->redirectTo(self::TESTS_SLUG, ['deleted' => '1']);
+    }
+
+    public function handleCloneTest(): void
+    {
+        $this->assertCap();
+        \check_admin_referer('cah_split_clone_test');
+
+        $id = isset($_GET['test_id']) ? (int) $_GET['test_id'] : 0;
+        if ($id > 0) {
+            $newId = $this->tests->clone($id);
+            if ($newId !== null) {
+                $this->redirectTo(self::TESTS_SLUG, [
+                    'action'  => 'edit',
+                    'test_id' => (string) $newId,
+                    'cloned'  => '1',
+                ]);
+                return;
+            }
+        }
+        $this->redirectTo(self::TESTS_SLUG);
+    }
+
+    public function handleToggleStatus(): void
+    {
+        $this->assertCap();
+        \check_admin_referer('cah_split_toggle_status');
+
+        $id     = isset($_GET['test_id']) ? (int) $_GET['test_id'] : 0;
+        $status = isset($_GET['status']) ? \sanitize_key((string) $_GET['status']) : '';
+
+        if ($id > 0 && $status !== '') {
+            try {
+                $this->tests->updateStatus($id, $status);
+            } catch (\Throwable $e) {
+                \set_transient(
+                    'cah_split_error_' . \get_current_user_id(),
+                    $e->getMessage(),
+                    60
+                );
+            }
+        }
+        $this->redirectTo(self::TESTS_SLUG);
+    }
+
+    private function assertCap(): void
+    {
+        if (!\current_user_can(self::CAPABILITY)) {
+            \wp_die(\esc_html__('You do not have permission to perform this action.', 'cah-split'));
+        }
+    }
+
+    private function redirectTo(string $page, array $args = []): void
+    {
+        $args['page'] = $page;
+        \wp_safe_redirect(\add_query_arg($args, \admin_url('admin.php')));
         exit;
     }
 
