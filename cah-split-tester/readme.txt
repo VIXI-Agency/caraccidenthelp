@@ -3,7 +3,7 @@ Contributors: vixi-agency
 Tags: a/b testing, split testing, lead generation
 Requires at least: 6.2
 Requires PHP: 8.1
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: Proprietary
 
 Generic A/B/N split testing for caraccidenthelp.net. WordPress is the source of truth for leads; Make.com is forwarded server-side after the lead is persisted.
@@ -35,6 +35,10 @@ The plugin ships with a hand-rolled PSR-4 autoloader used as a fallback when no 
 from the plugin root. No runtime dependencies are required.
 
 == Changelog ==
+
+= 1.0.3 =
+* Bundle the site's public/ asset directory inside the plugin at variants/public/ and inject <base href="{plugin_url}variants/"> into every plugin-hosted variant so relative image/style URLs like public/logo-full.webp resolve correctly regardless of the variant URL path (was broken: relative paths resolved to /_cah/v/.../public/... and 404'd).
+* Router: when a visitor's cookie points at a variant whose weight is now 0, re-bucket instead of sticking. Previously a visitor bucketed to variant A before variant A's weight was set to 0 stayed on A forever, bypassing weighted selection among currently-active variants.
 
 = 1.0.2 =
 * Router and VariantRenderer now emit `nocache_headers()` plus `X-LiteSpeed-Cache-Control: no-cache` so LiteSpeed Cache (and any other compliant proxy) does not cache trigger-path redirects or variant HTML. Without this, cached responses would send the same variant and the same `window.cahSplit` context (same `visitor_id`) to every subsequent visitor, breaking weighted bucketing and per-visitor tracking. Encountered live on a LiteSpeed-hosted staging site.

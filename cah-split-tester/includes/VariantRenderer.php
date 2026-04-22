@@ -86,14 +86,17 @@ final class VariantRenderer
             'nonce'        => \wp_create_nonce('wp_rest'),
         ];
 
+        $variantsUrl = CAH_SPLIT_PLUGIN_URL . 'variants/';
+        $base   = '<base href="' . \esc_url($variantsUrl) . '">';
         $inline = '<script>window.cahSplit = ' . \wp_json_encode($context) . ';</script>';
         $src    = \esc_url(\rest_url('cah-split/v1/tracking.js'));
         $tag    = '<script src="' . $src . '" defer></script>';
 
-        $snippet = "\n    " . $inline . "\n    " . $tag . "\n";
+        $snippet = "\n    " . $base . "\n    " . $inline . "\n    " . $tag . "\n";
 
-        if (\stripos($html, '</head>') !== false) {
-            return \preg_replace('/<\/head>/i', $snippet . '</head>', $html, 1) ?? $html;
+        if (\preg_match('/<head\b[^>]*>/i', $html, $m, PREG_OFFSET_CAPTURE)) {
+            $offset = $m[0][1] + \strlen($m[0][0]);
+            return \substr($html, 0, $offset) . $snippet . \substr($html, $offset);
         }
         return $snippet . $html;
     }

@@ -117,7 +117,9 @@ final class Router
 
         if ($cookie !== null) {
             $variant = $this->variants->find($cookie['variant_id']);
-            if ($variant === null || (int) $variant['test_id'] !== $testId) {
+            if ($variant === null
+                || (int) $variant['test_id'] !== $testId
+                || (int) $variant['weight'] <= 0) {
                 $variant = null;
             }
         }
