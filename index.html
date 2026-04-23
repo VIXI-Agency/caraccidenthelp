@@ -663,8 +663,12 @@ function gfValidate(step) {
   if (step === 7) { if (!gfd.zipcode || gfd.zipcode.length !== 5) { showErr('gf-err-7'); return false; } }
   if (step === 9) {
     var ok9 = true;
-    var phoneDigits = gfd.phone.replace(/\D/g, '');
-    if (phoneDigits.length !== 10) { showErr('gf-err-9a'); ok9 = false; }
+    var pd = gfd.phone.replace(/\D/g, '');
+    // Allow test number 5555555555, otherwise apply strict validation (no leading 0/1, no 10 repeated digits)
+    var isTest = pd === '5555555555';
+    if (pd.length !== 10 || (!isTest && (/^[01]/.test(pd) || /^(\d)\1{9}$/.test(pd)))) {
+      showErr('gf-err-9a'); ok9 = false;
+    }
     if (!gfd.agree) { showErr('gf-err-9b'); ok9 = false; }
     if (!ok9) return false;
   }
@@ -677,15 +681,6 @@ function gfValidate(step) {
   if (step === 11) {
     var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!re.test(gfd.email)) { showErr('gf-err-11'); return false; }
-  }
-  if (step === 12) {
-    var ok12 = true;
-    var pd = gfd.phone.replace(/\D/g,'');
-    if (pd.length !== 10 || /^[01]/.test(pd) || /^(\d)\1{9}$/.test(pd)) {
-      showErr('gf-err-12a'); ok12 = false;
-    }
-    if (!gfd.agree) { showErr('gf-err-12b'); ok12 = false; }
-    if (!ok12) return false;
   }
   return true;
 }
@@ -898,7 +893,9 @@ function gfValidatePhone() {
   var digits = gfd.phone.replace(/\D/g,'');
   var err = document.getElementById('gf-err-phone-live');
   if (!err) return;
-  if (digits.length === 10 && (/^[01]/.test(digits) || /^(\d)\1{9}$/.test(digits))) {
+  // Allow test number 5555555555
+  var isTest = digits === '5555555555';
+  if (digits.length === 10 && !isTest && (/^[01]/.test(digits) || /^(\d)\1{9}$/.test(digits))) {
     err.style.display = 'block';
   } else {
     err.style.display = 'none';
