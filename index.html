@@ -1032,11 +1032,13 @@ function gfSubmit() {
 
   // Also log to Google Sheet (for demo/testing)
   var sheetPayload = Object.assign({}, gfd, gfUtms);
-  fetch('https://script.google.com/macros/s/AKfycbxNvIKH_IedX2ThJG7IC-v2Jb7O2eEPvCf9VBFtm2uBRPj6wTpON6rQg8koHmIe5WJlVQ/exec', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(sheetPayload)
-  }).catch(function(){});
+  var sheetUrl = 'https://script.google.com/macros/s/AKfycbxNvIKH_IedX2ThJG7IC-v2Jb7O2eEPvCf9VBFtm2uBRPj6wTpON6rQg8koHmIe5WJlVQ/exec';
+  try {
+    var blob = new Blob([JSON.stringify(sheetPayload)], { type: 'text/plain' });
+    navigator.sendBeacon(sheetUrl, blob);
+  } catch(e) {
+    fetch(sheetUrl, { method: 'POST', body: JSON.stringify(sheetPayload), keepalive: true }).catch(function(){});
+  }
 
   // Send to Make.com webhook, then redirect
   fetch('https://hook.us2.make.com/bq4dng1sofubjsweiw8w46deyryw5f9b', {
