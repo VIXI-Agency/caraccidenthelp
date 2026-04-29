@@ -54,6 +54,7 @@ $retryUrl = wp_nonce_url(
         <div class="cah-metric">
             <span class="cah-metric-label"><?php printf(esc_html__('Pageviews (last %d days)', 'cah-split'), (int) $overview['window_days']); ?></span>
             <span class="cah-metric-value"><?php echo esc_html(number_format_i18n((int) $overview['pageviews'])); ?></span>
+            <span class="cah-metric-sub"><?php printf(esc_html__('%s unique visitors', 'cah-split'), number_format_i18n((int) ($overview['unique_visitors'] ?? 0))); ?></span>
         </div>
         <div class="cah-metric">
             <span class="cah-metric-label"><?php printf(esc_html__('Leads (last %d days)', 'cah-split'), (int) $overview['window_days']); ?></span>
@@ -81,6 +82,7 @@ $retryUrl = wp_nonce_url(
                     <th><?php esc_html_e('Status', 'cah-split'); ?></th>
                     <th><?php esc_html_e('Variants', 'cah-split'); ?></th>
                     <th><?php esc_html_e('Pageviews (30d)', 'cah-split'); ?></th>
+                    <th title="<?php esc_attr_e('Distinct cookie-based visitors. Pageviews÷Unique should be roughly 1.2–2 for healthy traffic.', 'cah-split'); ?>"><?php esc_html_e('Unique (30d)', 'cah-split'); ?></th>
                     <th><?php esc_html_e('Leads (30d)', 'cah-split'); ?></th>
                     <th><?php esc_html_e('CR', 'cah-split'); ?></th>
                     <th></th>
@@ -90,8 +92,10 @@ $retryUrl = wp_nonce_url(
                 <?php foreach ($tests as $test) :
                     $id    = (int) $test['id'];
                     $vars  = $variants->forTest($id);
-                    $stat  = $quickStats[$id] ?? ['pageviews' => 0, 'leads' => 0, 'qualified' => 0];
+                    $stat  = $quickStats[$id] ?? ['pageviews' => 0, 'unique_visitors' => 0, 'leads' => 0, 'qualified' => 0];
                     $cr    = $stat['pageviews'] > 0 ? ($stat['leads'] / $stat['pageviews']) * 100 : 0;
+                    $uniq  = (int) ($stat['unique_visitors'] ?? 0);
+                    $ratio = $uniq > 0 ? ($stat['pageviews'] / $uniq) : 0;
                     $detail = admin_url('admin.php?page=' . Admin::TESTS_SLUG . '&action=detail&test_id=' . $id);
                     ?>
                     <tr>
@@ -104,6 +108,12 @@ $retryUrl = wp_nonce_url(
                         </td>
                         <td><?php echo count($vars); ?></td>
                         <td><?php echo esc_html(number_format_i18n((int) $stat['pageviews'])); ?></td>
+                        <td>
+                            <?php echo esc_html(number_format_i18n($uniq)); ?>
+                            <?php if ($uniq > 0) : ?>
+                                <small style="color:#646970;">(<?php echo esc_html(number_format_i18n($ratio, 1)); ?>x)</small>
+                            <?php endif; ?>
+                        </td>
                         <td><?php echo esc_html(number_format_i18n((int) $stat['leads'])); ?></td>
                         <td><?php echo esc_html(number_format_i18n($cr, 2)); ?>%</td>
                         <td><a href="<?php echo esc_url($detail); ?>"><?php esc_html_e('View', 'cah-split'); ?></a></td>

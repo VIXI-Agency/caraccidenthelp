@@ -185,6 +185,7 @@
 .cah-make-pending  { background: #e2e3e5; color: #383d41; }
 .cah-make-success  { background: #d1e7dd; color: #0f5132; }
 .cah-make-failed   { background: #f8d7da; color: #842029; }
+.cah-make-skipped  { background: #cfe2ff; color: #084298; }
 
 .cah-sig {
     display: inline-block;

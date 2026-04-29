@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace VIXI\CahSplit\Admin;
 
+use VIXI\CahSplit\LeadReprocessor;
 use VIXI\CahSplit\MakeForwarder;
 use VIXI\CahSplit\Repositories\LeadsRepository;
 use VIXI\CahSplit\Repositories\PageviewsRepository;
@@ -35,6 +36,7 @@ final class Admin
         private readonly StatsRepository $stats,
         private readonly Significance $significance,
         private readonly MakeForwarder $forwarder,
+        private readonly LeadReprocessor $reprocessor,
     ) {
     }
 
@@ -50,6 +52,8 @@ final class Admin
         \add_action('admin_post_cah_split_export_leads', [$this, 'handleLeadsExport']);
         \add_action('admin_post_cah_split_prune_pageviews', [$this, 'handlePrunePageviews']);
         \add_action('admin_post_cah_split_retry_make', [$this, 'handleRetryMake']);
+        \add_action('admin_post_cah_split_reset_test_stats', [$this, 'handleResetTestStats']);
+        \add_action('admin_post_cah_split_reprocess_unknown', [$this, 'handleReprocessUnknown']);
     }
 
     public function registerMenu(): void
@@ -193,15 +197,22 @@ final class Admin
 
     private function parseDateRange(): array
     {
-        $now  = \current_time('timestamp');
+        // The user picks dates in their dashboard timezone (Settings),
+        // so default "today" / "30 days ago" must also be computed in that
+        // zone — not via current_time()/gmdate() (which use the WP site zone
+        // or UTC). The repository converts to UTC before hitting SQL.
+        $tz   = $this->settings->dashboardTimezone();
         $from = isset($_GET['from']) ? \sanitize_text_field((string) $_GET['from']) : '';
         $to   = isset($_GET['to']) ? \sanitize_text_field((string) $_GET['to']) : '';
 
+        $todayLocal = (new \DateTimeImmutable('now', $tz))->format('Y-m-d');
+        $defFrom    = (new \DateTimeImmutable('now', $tz))->modify('-29 days')->format('Y-m-d');
+
         if (!\preg_match('/^\d{4}-\d{2}-\d{2}$/', $from)) {
-            $from = \gmdate('Y-m-d', $now - 29 * DAY_IN_SECONDS);
+            $from = $defFrom;
         }
         if (!\preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)) {
-            $to = \gmdate('Y-m-d', $now);
+            $to = $todayLocal;
         }
 
         return [$from . ' 00:00:00', $to . ' 23:59:59'];
@@ -338,10 +349,21 @@ final class Admin
         $ttlDays    = \max(1, (int) ($_POST['cookie_ttl_days'] ?? Settings::DEFAULT_COOKIE_TTL_DAYS));
         $dropTables = !empty($_POST['drop_tables_on_uninstall']);
 
+        // Whitelist the timezone choice. Anything outside the published list
+        // (or 'site' for WP default) is rejected back to 'site' instead of
+        // letting an attacker poke arbitrary identifiers into get_option().
+        $tzInput = isset($_POST['dashboard_timezone'])
+            ? \sanitize_text_field((string) $_POST['dashboard_timezone'])
+            : Settings::DASHBOARD_TZ_SITE;
+        $tz = \array_key_exists($tzInput, Settings::DASHBOARD_TZ_CHOICES)
+            ? $tzInput
+            : Settings::DASHBOARD_TZ_SITE;
+
         $this->settings->update([
             'make_webhook_url'         => $webhook,
             'cookie_ttl_days'          => $ttlDays,
             'drop_tables_on_uninstall' => $dropTables,
+            'dashboard_timezone'       => $tz,
         ]);
 
         $this->redirectTo(self::SETTINGS_SLUG, ['updated' => '1']);
@@ -485,6 +507,102 @@ final class Admin
             );
         }
         $this->redirectTo(self::MENU_SLUG, ['retried' => '1']);
+    }
+
+    public function handleResetTestStats(): void
+    {
+        $this->assertCap();
+        \check_admin_referer('cah_split_reset_test_stats');
+
+        $id = isset($_GET['test_id']) ? (int) $_GET['test_id'] : 0;
+        if ($id <= 0) {
+            \set_transient(
+                'cah_split_error_' . \get_current_user_id(),
+                \__('Missing test ID.', 'cah-split'),
+                60
+            );
+            $this->redirectTo(self::TESTS_SLUG);
+            return;
+        }
+
+        if ($this->tests->find($id) === null) {
+            \set_transient(
+                'cah_split_error_' . \get_current_user_id(),
+                \__('Test not found.', 'cah-split'),
+                60
+            );
+            $this->redirectTo(self::TESTS_SLUG);
+            return;
+        }
+
+        try {
+            $deletedPageviews = $this->pageviews->deleteByTestId($id);
+            $deletedLeads     = $this->leads->deleteByTestId($id);
+        } catch (\Throwable $e) {
+            \set_transient(
+                'cah_split_error_' . \get_current_user_id(),
+                $e->getMessage(),
+                60
+            );
+            $this->redirectTo(self::TESTS_SLUG, [
+                'action'  => 'edit',
+                'test_id' => (string) $id,
+            ]);
+            return;
+        }
+
+        $this->redirectTo(self::TESTS_SLUG, [
+            'action'             => 'edit',
+            'test_id'            => (string) $id,
+            'reset_stats'        => '1',
+            'reset_pageviews'    => (string) $deletedPageviews,
+            'reset_leads'        => (string) $deletedLeads,
+        ]);
+    }
+
+    public function handleReprocessUnknown(): void
+    {
+        $this->assertCap();
+        \check_admin_referer('cah_split_reprocess_unknown');
+
+        $id = isset($_GET['test_id']) ? (int) $_GET['test_id'] : 0;
+        if ($id <= 0 || $this->tests->find($id) === null) {
+            \set_transient(
+                'cah_split_error_' . \get_current_user_id(),
+                \__('Test not found.', 'cah-split'),
+                60
+            );
+            $this->redirectTo(self::TESTS_SLUG);
+            return;
+        }
+
+        try {
+            $stats = $this->reprocessor->reprocessTest($id);
+        } catch (\Throwable $e) {
+            \set_transient(
+                'cah_split_error_' . \get_current_user_id(),
+                $e->getMessage(),
+                60
+            );
+            $this->redirectTo(self::TESTS_SLUG, [
+                'action'  => 'edit',
+                'test_id' => (string) $id,
+            ]);
+            return;
+        }
+
+        $this->redirectTo(self::TESTS_SLUG, [
+            'action'           => 'edit',
+            'test_id'          => (string) $id,
+            'reprocessed'      => '1',
+            'rp_scanned'       => (string) $stats['scanned'],
+            'rp_updated'       => (string) $stats['updated'],
+            'rp_qualified'     => (string) $stats['qualified'],
+            'rp_disqualified'  => (string) $stats['disqualified'],
+            'rp_still_unknown' => (string) $stats['still_unknown'],
+            'rp_skipped'       => (string) $stats['skipped'],
+            'rp_errors'        => (string) $stats['errors'],
+        ]);
     }
 
     private function assertCap(): void

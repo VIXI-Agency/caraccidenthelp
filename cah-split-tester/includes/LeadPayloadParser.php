@@ -72,6 +72,15 @@ final class LeadPayloadParser
             $submission = [];
         }
 
+        // Detect payload format. Make.com Growform format wraps each field as
+        // ['label'=>'...', 'value'=>'...']. Flat querystring format (used by the
+        // /thank-you/ skip_make path) is a plain associative array of
+        // ['firstName'=>'Jane', 'email'=>'jane@x.com', ...].
+        $isFlat = $this->isFlatAssoc($submission);
+        if ($isFlat) {
+            return $this->parseFlat($submission);
+        }
+
         $out = [];
         foreach (self::FIELD_LABELS as $column => $label) {
             $out[$column] = $this->valueByLabel($submission, $label);
@@ -100,6 +109,115 @@ final class LeadPayloadParser
             : null;
 
         $out = $this->addUtms($out, $submission);
+
+        foreach ($out as $key => $value) {
+            if (\is_string($value)) {
+                $out[$key] = \sanitize_text_field($value);
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * True when $fields looks like a flat ['key' => scalar] map
+     * (Growform querystring) instead of the Make.com field-object shape
+     * where each value is ['type'=>..,'label'=>..,'value'=>..].
+     *
+     * Detection is value-based, not key-based: Make can send `fields` either
+     * as a sequential list ([0,1,2,...]) OR as an associative object keyed
+     * by Growform field IDs (`buttons_485431231808561`, `text_921418548778799`,
+     * `hidden_clickid`, etc). In both cases each VALUE is an object with at
+     * least a `value` key (and usually `type` and/or `label`). Flat shape has
+     * scalar values (or empty strings) directly under each key.
+     */
+    private function isFlatAssoc(array $fields): bool
+    {
+        if ($fields === []) {
+            return false;
+        }
+        foreach ($fields as $v) {
+            // If ANY entry is a Make-style field object, treat the whole
+            // payload as Make shape.
+            if (\is_array($v) && (
+                isset($v['label']) ||
+                isset($v['type'])  ||
+                \array_key_exists('value', $v)
+            )) {
+                return false;
+            }
+        }
+        // No entry looked like a Make-shape field object → flat querystring.
+        return true;
+    }
+
+    /**
+     * Parse a flat associative array of Growform querystring keys into the
+     * canonical column names + raw values used by the rest of the plugin
+     * (LeadStage, LeadsRepository, etc.). Mirrors what parse() does for the
+     * Make.com label-based payload but reads directly by querystring key.
+     */
+    private function parseFlat(array $f): array
+    {
+        // Helper to read first non-empty key from a list of candidates.
+        $get = function (array $keys) use ($f): ?string {
+            foreach ($keys as $k) {
+                if (isset($f[$k]) && $f[$k] !== '' && \is_scalar($f[$k])) {
+                    return (string) $f[$k];
+                }
+            }
+            return null;
+        };
+
+        $serviceLabel  = $get(['type_of_service', 'service']);
+        $attorneyLabel = $get(['attorney']);
+        $faultLabel    = $get(['fault']);
+        $injuryLabel   = $get(['injury']);
+        $timeframeLbl  = $get(['accindent_happen', 'accident_happen', 'timeframe']);
+        $insuredLabel  = $get(['insured']);
+
+        $out = [
+            'service_type'      => $serviceLabel  !== null ? (self::SERVICE_LABEL_TO_RAW[$serviceLabel]   ?? null) : null,
+            'attorney'          => $attorneyLabel !== null ? (self::ATTORNEY_LABEL_TO_RAW[$attorneyLabel] ?? null) : null,
+            'fault'             => $faultLabel    !== null ? (self::FAULT_LABEL_TO_RAW[$faultLabel]       ?? null) : null,
+            'injury'            => $injuryLabel   !== null ? (self::INJURY_LABEL_TO_RAW[$injuryLabel]     ?? null) : null,
+            'timeframe'         => $timeframeLbl  !== null ? (self::TIMEFRAME_LABEL_TO_RAW[$timeframeLbl] ?? null) : null,
+            'state'             => $get(['state']),
+            'zipcode'           => $get(['zipcode']),
+            'insured'           => $insuredLabel  !== null ? (self::INSURED_LABEL_TO_RAW[$insuredLabel]   ?? null) : null,
+            'describe_accident' => $get(['describe', 'describe_accident']),
+            'first_name'        => $get(['firstName', 'first_name']),
+            'last_name'         => $get(['lastName', 'last_name']),
+            'email'             => $get(['email']),
+            'phone'             => $get(['phone']),
+        ];
+
+        $out['state']   = \is_string($out['state'])
+            ? \strtolower(\trim($out['state']))
+            : null;
+        $out['zipcode'] = \is_string($out['zipcode'])
+            ? \substr(\trim($out['zipcode']), 0, 16)
+            : null;
+
+        $out['phone'] = $this->normalizePhone($out['phone']);
+        $out['email'] = \is_string($out['email']) ? \sanitize_email($out['email']) : null;
+
+        // TrustedForm cert can be sent under either of two query keys depending
+        // on Growform configuration — accept both.
+        $tf = $get(['TrustedForm_certUrl', 'trustedform_cert_url', 'trustedform']);
+        $out['trustedform_cert_url'] = ($tf !== null && $tf !== '') ? \esc_url_raw($tf) : null;
+
+        // UTMs come straight from the querystring under their canonical names.
+        $utmKeys = [
+            'utm_source', 'utm_medium', 'utm_term', 'utm_campaign',
+            'utm_adname', 'utm_adid', 'utm_adsetid', 'utm_campaignid',
+            'utm_placement', 'utm_sitesourcename', 'utm_creative',
+            'utm_adsetname', 'utm_state', 'clickid',
+        ];
+        foreach ($utmKeys as $k) {
+            $v = $get([$k]);
+            $out[$k] = ($v === null || $v === '') ? null : (string) $v;
+        }
 
         foreach ($out as $key => $value) {
             if (\is_string($value)) {

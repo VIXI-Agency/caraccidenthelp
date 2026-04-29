@@ -79,12 +79,66 @@ final class Router
             return;
         }
 
+        // 1) Pretty-path direct render. If a plugin-hosted variant has a
+        //    pretty_path matching the current request, render that variant
+        //    in place (no 302). This makes URLs like /car-accident-b/ serve
+        //    v1.html with tracking, instead of /_cah/v/<test>/<variant>/.
+        //
+        //    We only render when WP itself has no matching content for this
+        //    path (is_404), so existing pages/posts always win. This avoids
+        //    silently hijacking a real WP page if an admin chose a colliding
+        //    pretty_path.
+        if ($this->maybeRenderPrettyPath($path)) {
+            return;
+        }
+
         $test = $this->tests->activeByTriggerPath($path);
         if ($test === null) {
             return;
         }
 
         $this->routeToVariant((int) $test['id']);
+    }
+
+    /**
+     * Try to resolve `$path` to a plugin-hosted variant via pretty_path.
+     *
+     * Returns true (and exits via renderer) when a match was rendered;
+     * false when no match was found and the request should continue down
+     * the normal Router pipeline.
+     *
+     * Conservative: only fires on 404 (i.e. WP could not match the URL to
+     * a real post/page/term). If an admin sets a pretty_path that collides
+     * with a real page slug, the real page wins.
+     */
+    private function maybeRenderPrettyPath(string $path): bool
+    {
+        if (!\is_404()) {
+            return false;
+        }
+
+        $variant = $this->variants->findByPrettyPath($path);
+        if ($variant === null) {
+            return false;
+        }
+        if (empty($variant['html_file'])) {
+            return false;
+        }
+
+        $test = $this->tests->find((int) $variant['test_id']);
+        if ($test === null || (string) ($test['status'] ?? '') !== 'active') {
+            return false;
+        }
+
+        $visitorId = $this->ensureVisitorCookie((int) $test['id'], (int) $variant['id']);
+
+        // Suppress the 404 status that `is_404()` triggered upstream, and
+        // make sure caches don't bake the response.
+        \status_header(200);
+        $this->sendNoCacheHeaders('pretty-path-render');
+
+        $this->renderer->render($test, $variant, $visitorId);
+        exit;
     }
 
     private function renderVariantRoute(): void

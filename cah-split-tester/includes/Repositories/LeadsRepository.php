@@ -13,6 +13,7 @@ final class LeadsRepository
     public const MAKE_STATUS_PENDING = 'pending';
     public const MAKE_STATUS_SUCCESS = 'success';
     public const MAKE_STATUS_FAILED  = 'failed';
+    public const MAKE_STATUS_SKIPPED = 'skipped';
 
     public function table(): string
     {
@@ -52,6 +53,16 @@ final class LeadsRepository
             'make_status'       => self::MAKE_STATUS_SUCCESS,
             'make_forwarded_at' => \current_time('mysql'),
             'make_response'     => $response,
+        ], ['id' => $id]);
+    }
+
+    public function markForwardSkipped(int $id, string $reason = 'skip_make flag set by client'): void
+    {
+        global $wpdb;
+        $wpdb->update($this->table(), [
+            'make_status'       => self::MAKE_STATUS_SKIPPED,
+            'make_forwarded_at' => \current_time('mysql'),
+            'make_response'     => $reason,
         ], ['id' => $id]);
     }
 
@@ -206,5 +217,71 @@ final class LeadsRepository
 
         $where = $clauses === [] ? '' : 'WHERE ' . \implode(' AND ', $clauses);
         return [$where, $args];
+    }
+
+    public function deleteByTestId(int $testId): int
+    {
+        global $wpdb;
+        $table = $this->table();
+        return (int) $wpdb->query($wpdb->prepare(
+            "DELETE FROM {$table} WHERE test_id = %d",
+            $testId
+        ));
+    }
+
+    /**
+     * Return rows with lead_stage='unknown' that still have a raw_payload
+     * available, so the reprocessor can parse them again with the current
+     * parser/stage logic. Limited to 500 per batch to keep memory bounded.
+     */
+    public function findUnknownByTestId(int $testId, int $limit = 500): array
+    {
+        global $wpdb;
+        $table = $this->table();
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, raw_payload FROM {$table}
+                 WHERE test_id = %d AND lead_stage = %s AND raw_payload IS NOT NULL AND raw_payload <> ''
+                 ORDER BY id ASC
+                 LIMIT %d",
+                $testId,
+                'unknown',
+                $limit
+            ),
+            ARRAY_A
+        );
+        return \is_array($rows) ? $rows : [];
+    }
+
+    /**
+     * Update a lead's parsed columns + lead_stage from a (re-)parse.
+     * Only writes columns whose key is present in $fields, so we don't
+     * blow away existing meta (test_id, visitor_id, ip_hash, etc).
+     */
+    public function updateParsedFields(int $id, array $fields, string $stage): bool
+    {
+        global $wpdb;
+        $table = $this->table();
+
+        $allowed = [
+            'service_type', 'attorney', 'fault', 'injury', 'timeframe',
+            'state', 'zipcode', 'insured', 'first_name', 'last_name',
+            'email', 'phone', 'describe_accident', 'trustedform_cert_url',
+            'utm_source', 'utm_medium', 'utm_campaign', 'utm_term',
+            'utm_content', 'utm_adname', 'utm_adid', 'utm_adsetid',
+            'utm_adsetname', 'utm_campaignid', 'utm_placement',
+            'utm_sitesourcename', 'utm_creative', 'utm_state', 'clickid',
+        ];
+
+        $update = [];
+        foreach ($allowed as $col) {
+            if (\array_key_exists($col, $fields)) {
+                $update[$col] = $fields[$col];
+            }
+        }
+        $update['lead_stage'] = $stage;
+
+        $result = $wpdb->update($table, $update, ['id' => $id]);
+        return $result !== false;
     }
 }

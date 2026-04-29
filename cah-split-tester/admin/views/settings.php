@@ -75,6 +75,34 @@ if ($userErr) {
                     </td>
                 </tr>
                 <tr>
+                    <th scope="row">
+                        <label for="dashboard_timezone"><?php esc_html_e('Dashboard timezone', 'cah-split'); ?></label>
+                    </th>
+                    <td>
+                        <select name="dashboard_timezone" id="dashboard_timezone">
+                            <?php
+                            $currentTz = $settings->dashboardTimezoneRaw();
+                            foreach (\VIXI\CahSplit\Settings::DASHBOARD_TZ_CHOICES as $tzKey => $tzLabel) :
+                                ?>
+                                <option value="<?php echo esc_attr((string) $tzKey); ?>" <?php selected($currentTz, $tzKey); ?>>
+                                    <?php echo esc_html((string) $tzLabel); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="description">
+                            <?php
+                            $resolved = $settings->dashboardTimezone();
+                            $nowLocal = (new \DateTimeImmutable('now', $resolved))->format('Y-m-d H:i T');
+                            printf(
+                                /* translators: %s: current local time in selected zone */
+                                esc_html__('Used to interpret all date filters and to bucket the per-day chart. Leads are stored in UTC and converted on read — changing this never moves data, only how it’s displayed. Currently resolved to: %s', 'cah-split'),
+                                '<strong>' . esc_html($nowLocal) . '</strong>'
+                            );
+                            ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
                     <th scope="row"><?php esc_html_e('Drop tables on uninstall', 'cah-split'); ?></th>
                     <td>
                         <label for="drop_tables_on_uninstall">
