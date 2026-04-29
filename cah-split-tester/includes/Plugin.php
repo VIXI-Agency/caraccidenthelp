@@ -34,6 +34,7 @@ final class Plugin
     public readonly Router $router;
     public readonly RestApi $restApi;
     public readonly Cron $cron;
+    public readonly LeadReprocessor $reprocessor;
     public readonly Admin $admin;
 
     private function __construct()
@@ -43,7 +44,7 @@ final class Plugin
         $this->variants        = new VariantsRepository();
         $this->leads           = new LeadsRepository();
         $this->pageviews       = new PageviewsRepository();
-        $this->stats           = new StatsRepository();
+        $this->stats           = new StatsRepository($this->settings);
         $this->significance    = new Significance();
         $this->leadStage       = new LeadStage();
         $this->parser          = new LeadPayloadParser();
@@ -59,6 +60,11 @@ final class Plugin
             $this->forwarder,
         );
         $this->cron            = new Cron($this->forwarder);
+        $this->reprocessor     = new LeadReprocessor(
+            $this->leads,
+            $this->parser,
+            $this->leadStage,
+        );
         $this->admin           = new Admin(
             $this->settings,
             $this->tests,
@@ -68,6 +74,7 @@ final class Plugin
             $this->stats,
             $this->significance,
             $this->forwarder,
+            $this->reprocessor,
         );
     }
 

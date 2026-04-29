@@ -58,12 +58,14 @@ final class Activator
             slug VARCHAR(100) NOT NULL DEFAULT '',
             url VARCHAR(2048) NOT NULL,
             html_file VARCHAR(255) DEFAULT NULL,
+            pretty_path VARCHAR(190) DEFAULT NULL,
             weight TINYINT UNSIGNED NOT NULL DEFAULT 0,
             sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
             KEY idx_test (test_id),
-            KEY idx_test_slug (test_id, slug)
+            KEY idx_test_slug (test_id, slug),
+            KEY idx_pretty_path (pretty_path)
         ) {$charsetCollate};";
 
         $pageviews = "CREATE TABLE {$prefix}cah_pageviews (

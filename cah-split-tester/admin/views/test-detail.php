@@ -88,6 +88,7 @@ foreach ($series['leads'] as $row) {
                 <th><?php esc_html_e('Variant', 'cah-split'); ?></th>
                 <th><?php esc_html_e('Weight', 'cah-split'); ?></th>
                 <th><?php esc_html_e('Pageviews', 'cah-split'); ?></th>
+                <th title="<?php esc_attr_e('Distinct cookie-based visitors. Pageviews÷Unique ratio shown in parentheses — healthy traffic is usually 1.2–2x. A much higher ratio can indicate refresh loops or bots.', 'cah-split'); ?>"><?php esc_html_e('Unique', 'cah-split'); ?></th>
                 <th><?php esc_html_e('Leads', 'cah-split'); ?></th>
                 <th><?php esc_html_e('CR', 'cah-split'); ?></th>
                 <th><?php esc_html_e('Qualified', 'cah-split'); ?></th>
@@ -97,7 +98,9 @@ foreach ($series['leads'] as $row) {
         </thead>
         <tbody>
             <?php foreach ($variantStats as $idx => $vs) :
-                $pv  = (int) $vs['pageviews'];
+                $pv    = (int) $vs['pageviews'];
+                $uniq  = (int) ($vs['unique_visitors'] ?? 0);
+                $ratio = $uniq > 0 ? ($pv / $uniq) : 0.0;
                 $lds = (int) $vs['leads'];
                 $ql  = (int) $vs['qualified_leads'];
                 $cr  = $pv > 0 ? ($lds / $pv) * 100 : 0.0;
@@ -123,6 +126,12 @@ foreach ($series['leads'] as $row) {
                     <td><strong><?php echo esc_html((string) $vs['name']); ?></strong> <small><?php echo esc_html((string) $vs['slug']); ?></small></td>
                     <td><?php echo esc_html((string) (int) $vs['weight']); ?>%</td>
                     <td><?php echo esc_html(number_format_i18n($pv)); ?></td>
+                    <td>
+                        <?php echo esc_html(number_format_i18n($uniq)); ?>
+                        <?php if ($uniq > 0) : ?>
+                            <small style="color:#646970;">(<?php echo esc_html(number_format_i18n($ratio, 1)); ?>x)</small>
+                        <?php endif; ?>
+                    </td>
                     <td><?php echo esc_html(number_format_i18n($lds)); ?></td>
                     <td><?php echo esc_html(number_format_i18n($cr, 2)); ?>%</td>
                     <td><?php echo esc_html(number_format_i18n($ql)); ?></td>
@@ -134,6 +143,8 @@ foreach ($series['leads'] as $row) {
     </table>
     <p class="description">
         <?php esc_html_e('Significance is a two-proportion z-test comparing each variant\'s CR to the first variant as baseline. * p<0.05, *** p<0.01. Informational only — no action is taken automatically.', 'cah-split'); ?>
+        <br />
+        <?php esc_html_e('CR uses pageviews as the denominator (industry standard for A/B tests). Unique = distinct cookie-based visitors; the multiplier in parentheses is pageviews÷unique — healthy traffic is typically 1.2–2x. A much higher ratio on a single variant may indicate refresh loops, bot traffic or a UX issue.', 'cah-split'); ?>
     </p>
 
     <h2><?php esc_html_e('Daily trend', 'cah-split'); ?></h2>

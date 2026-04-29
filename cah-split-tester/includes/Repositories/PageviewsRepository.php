@@ -43,4 +43,14 @@ final class PageviewsRepository
             $beforeDate
         ));
     }
+
+    public function deleteByTestId(int $testId): int
+    {
+        global $wpdb;
+        $table = $this->table();
+        return (int) $wpdb->query($wpdb->prepare(
+            "DELETE FROM {$table} WHERE test_id = %d",
+            $testId
+        ));
+    }
 }

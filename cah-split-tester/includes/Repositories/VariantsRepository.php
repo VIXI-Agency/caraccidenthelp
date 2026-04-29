@@ -76,6 +76,36 @@ final class VariantsRepository
     }
 
     /**
+     * Resolve a top-level pretty path to its variant row.
+     *
+     * Used by Router::handleRequest to render plugin-hosted variants under a
+     * clean URL like `/car-accident-b/` instead of `/_cah/v/<test>/<variant>/`.
+     * Only matches variants that ALSO have a usable `html_file`; variants whose
+     * pretty_path was set but later switched to External URL will not resolve
+     * (and the field is cleared by replaceAll() in that case).
+     *
+     * The lookup is case-insensitive (MySQL default collation) and trims leading
+     * slashes so callers can pass either `"car-accident-b"` or `"/car-accident-b"`.
+     */
+    public function findByPrettyPath(string $path): ?array
+    {
+        $path = \trim($path, "/ \t\n\r\0\x0B");
+        if ($path === '') {
+            return null;
+        }
+        global $wpdb;
+        $table = $this->table();
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$table} WHERE pretty_path = %s LIMIT 1",
+                $path
+            ),
+            ARRAY_A
+        );
+        return \is_array($row) ? $row : null;
+    }
+
+    /**
      * Sync variants for a test using UPSERT semantics.
      *
      * - Rows whose POST'd id matches an existing row are UPDATED (preserves variant_id → lead FK integrity).
@@ -112,9 +142,25 @@ final class VariantsRepository
             $existingById[(int) $row['id']] = $row;
         }
 
-        $now           = \current_time('mysql');
-        $usedSlugs     = [];
-        $keptIds       = [];
+        $now            = \current_time('mysql');
+        $usedSlugs      = [];
+        $usedPrettyPaths = [];
+        $keptIds        = [];
+
+        // Build a quick lookup of pretty_paths owned by OTHER tests, to detect
+        // cross-test collisions (a pretty_path is a top-level URL on the site,
+        // so it must be unique across all variants regardless of test).
+        $reservedAcrossTests = [];
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, pretty_path FROM {$this->table()} WHERE test_id <> %d AND pretty_path IS NOT NULL AND pretty_path <> ''",
+                $testId
+            ),
+            ARRAY_A
+        );
+        foreach ((array) $rows as $r) {
+            $reservedAcrossTests[(string) $r['pretty_path']] = (int) $r['id'];
+        }
 
         foreach (\array_values($visible) as $index => $variant) {
             $name = \sanitize_text_field((string) ($variant['name'] ?? ''));
@@ -129,14 +175,30 @@ final class VariantsRepository
             }
             $usedSlugs[] = $slug;
 
+            // Sanitize pretty_path. Only meaningful when the variant is
+            // plugin-hosted (has an html_file); for External URL variants we
+            // store NULL so admins can't accidentally route a top-level slug to
+            // a 302-redirect-only variant.
+            $prettyPathRaw = \trim((string) ($variant['pretty_path'] ?? ''));
+            $prettyPath    = null;
+            if ($prettyPathRaw !== '') {
+                $candidate = \sanitize_title(\ltrim($prettyPathRaw, '/'));
+                if ($candidate !== '') {
+                    $prettyPath = $candidate;
+                }
+            }
+
             $htmlFile = \trim((string) ($variant['html_file'] ?? ''));
             if ($htmlFile !== '') {
                 $htmlFile = \ltrim($htmlFile, '/');
                 $htmlFile = \basename($htmlFile);
-                $url      = '/_cah/v/' . $testSlug . '/' . $slug . '/';
+                $url      = $prettyPath !== null
+                    ? '/' . $prettyPath . '/'
+                    : '/_cah/v/' . $testSlug . '/' . $slug . '/';
             } else {
-                $htmlFile = null;
-                $url      = \esc_url_raw((string) ($variant['url'] ?? ''));
+                $htmlFile   = null;
+                $url        = \esc_url_raw((string) ($variant['url'] ?? ''));
+                $prettyPath = null; // pretty_path only applies to plugin-hosted variants.
             }
 
             if ($url === '' || $url === null) {
@@ -147,15 +209,44 @@ final class VariantsRepository
                 ));
             }
 
+            // Validate pretty_path uniqueness within this test and across tests.
+            if ($prettyPath !== null) {
+                if (\in_array($prettyPath, $usedPrettyPaths, true)) {
+                    throw new \InvalidArgumentException(\sprintf(
+                        /* translators: %s: pretty path value */
+                        \__('Pretty path "%s" is used by more than one variant in this test.', 'cah-split'),
+                        $prettyPath
+                    ));
+                }
+                if (isset($reservedAcrossTests[$prettyPath])) {
+                    throw new \InvalidArgumentException(\sprintf(
+                        /* translators: %s: pretty path value */
+                        \__('Pretty path "%s" is already used by a variant in another test.', 'cah-split'),
+                        $prettyPath
+                    ));
+                }
+                // Reject reserved system slugs to avoid hijacking core paths.
+                $reservedSystem = ['wp-admin', 'wp-content', 'wp-includes', 'wp-json', 'wp-login.php', '_cah', 'feed', 'sitemap', 'sitemap.xml', 'robots.txt'];
+                if (\in_array($prettyPath, $reservedSystem, true)) {
+                    throw new \InvalidArgumentException(\sprintf(
+                        /* translators: %s: reserved slug */
+                        \__('Pretty path "%s" is reserved by WordPress and cannot be used.', 'cah-split'),
+                        $prettyPath
+                    ));
+                }
+                $usedPrettyPaths[] = $prettyPath;
+            }
+
             $submittedId = isset($variant['id']) ? (int) $variant['id'] : 0;
             $data        = [
-                'test_id'    => $testId,
-                'name'       => $name,
-                'slug'       => $slug,
-                'url'        => $url,
-                'html_file'  => $htmlFile,
-                'weight'     => (int) ($variant['weight'] ?? 0),
-                'sort_order' => (int) ($variant['sort_order'] ?? $index),
+                'test_id'     => $testId,
+                'name'        => $name,
+                'slug'        => $slug,
+                'url'         => $url,
+                'html_file'   => $htmlFile,
+                'pretty_path' => $prettyPath,
+                'weight'      => (int) ($variant['weight'] ?? 0),
+                'sort_order'  => (int) ($variant['sort_order'] ?? $index),
             ];
 
             if ($submittedId > 0 && isset($existingById[$submittedId])) {

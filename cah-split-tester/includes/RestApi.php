@@ -102,12 +102,45 @@ final class RestApi
     {
         $body = $this->readBody($request);
 
+        // skip_make: when true, register the lead in the dashboard but do NOT
+        // forward to Make.com. Use this for variants where another system
+        // (e.g., Growform) already submits the lead to Make directly, so the
+        // plugin only needs to track the conversion for A/B test stats.
+        $skipMake = !empty($body['skip_make']);
+
         $makePayload = $body['make_payload'] ?? null;
-        if (!\is_array($makePayload)) {
+
+        // When skip_make is set, make_payload is optional. Otherwise it's required
+        // because we need it to forward to Make and to parse lead fields.
+        if (!$skipMake && !\is_array($makePayload)) {
             return new WP_REST_Response(['success' => false, 'message' => 'make_payload is required'], 400);
         }
 
-        $fields = $this->parser->parse($makePayload);
+        // Parse lead fields. When skip_make is set with no make_payload, fall back
+        // to form_meta.fields or top-level fields so the dashboard still gets data.
+        if (\is_array($makePayload) && !empty($makePayload)) {
+            $fields = $this->parser->parse($makePayload);
+        } else {
+            $fallbackFields = [];
+            if (isset($body['form_meta']['fields']) && \is_array($body['form_meta']['fields'])) {
+                $fallbackFields = $body['form_meta']['fields'];
+            } elseif (isset($body['fields']) && \is_array($body['fields'])) {
+                $fallbackFields = $body['fields'];
+            }
+            // Build a minimal make_payload-shaped array for the parser.
+            $syntheticPayload = [[
+                'event_type' => 'form_submission',
+                'webhook'    => ['version' => '4'],
+                'form_submission' => [
+                    'submitted_at' => \current_time('c'),
+                    'fields'       => $fallbackFields,
+                    'lead_stage'   => $body['form_meta']['lead_stage'] ?? ($body['lead_stage'] ?? null),
+                ],
+                'form_meta' => $body['form_meta'] ?? [],
+            ]];
+            $fields = $this->parser->parse($syntheticPayload);
+        }
+
         $stage  = $this->leadStage->compute($fields);
         $redirect = $this->leadStage->redirectUrl($stage);
 
@@ -135,22 +168,33 @@ final class RestApi
             ], 500);
         }
 
-        // Forward to Make.com in BLOCKING mode so make_status is updated correctly.
-        // Non-blocking mode previously returned true without ever calling
-        // markForwardSuccess() / markForwardFailed(), leaving every lead stuck at
-        // make_status=pending indefinitely. Blocking adds ~1-3s latency but is the
-        // only way MakeForwarder reads the response and updates status.
-        try {
-            $this->forwarder->forward($leadId, $makePayload, true);
-        } catch (\Throwable $e) {
-            \error_log('[cah-split] Make forward dispatch failed: ' . $e->getMessage());
+        if ($skipMake) {
+            // Mark as skipped immediately so the row doesn't sit in pending forever
+            // and the cron retry job doesn't try to forward it.
+            try {
+                $this->leads->markForwardSkipped($leadId, 'Client sent skip_make=true (e.g., Growform handles Make directly).');
+            } catch (\Throwable $e) {
+                \error_log('[cah-split] markForwardSkipped failed: ' . $e->getMessage());
+            }
+        } else {
+            // Forward to Make.com in BLOCKING mode so make_status is updated correctly.
+            // Non-blocking mode previously returned true without ever calling
+            // markForwardSuccess() / markForwardFailed(), leaving every lead stuck at
+            // make_status=pending indefinitely. Blocking adds ~1-3s latency but is the
+            // only way MakeForwarder reads the response and updates status.
+            try {
+                $this->forwarder->forward($leadId, $makePayload, true);
+            } catch (\Throwable $e) {
+                \error_log('[cah-split] Make forward dispatch failed: ' . $e->getMessage());
+            }
         }
 
         return new WP_REST_Response([
-            'success'     => true,
-            'lead_id'     => $leadId,
-            'lead_stage'  => $stage,
-            'redirect_url'=> $redirect,
+            'success'      => true,
+            'lead_id'      => $leadId,
+            'lead_stage'   => $stage,
+            'redirect_url' => $redirect,
+            'make_status'  => $skipMake ? LeadsRepository::MAKE_STATUS_SKIPPED : null,
         ], 201);
     }
 

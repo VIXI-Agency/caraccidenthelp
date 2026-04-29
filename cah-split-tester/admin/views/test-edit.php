@@ -23,8 +23,8 @@ if ($userErr) {
 }
 if (empty($variants)) {
     $variants = [
-        ['name' => '', 'slug' => '', 'url' => '', 'html_file' => '', 'weight' => 50, 'sort_order' => 0],
-        ['name' => '', 'slug' => '', 'url' => '', 'html_file' => '', 'weight' => 50, 'sort_order' => 1],
+        ['name' => '', 'slug' => '', 'url' => '', 'html_file' => '', 'pretty_path' => '', 'weight' => 50, 'sort_order' => 0],
+        ['name' => '', 'slug' => '', 'url' => '', 'html_file' => '', 'pretty_path' => '', 'weight' => 50, 'sort_order' => 1],
     ];
 }
 
@@ -46,6 +46,43 @@ $availableFiles = VariantRenderer::availableFiles();
     <?php endif; ?>
     <?php if (!empty($_GET['cloned'])) : ?>
         <div class="notice notice-info is-dismissible"><p><?php esc_html_e('Test cloned. Review variants and activate when ready.', 'cah-split'); ?></p></div>
+    <?php endif; ?>
+    <?php if (!empty($_GET['reset_stats'])) :
+        $rPv = isset($_GET['reset_pageviews']) ? (int) $_GET['reset_pageviews'] : 0;
+        $rLd = isset($_GET['reset_leads']) ? (int) $_GET['reset_leads'] : 0;
+        ?>
+        <div class="notice notice-success is-dismissible">
+            <p><?php printf(
+                esc_html__('Stats reset for this test. Deleted %1$s pageviews and %2$s leads.', 'cah-split'),
+                '<strong>' . esc_html(number_format_i18n($rPv)) . '</strong>',
+                '<strong>' . esc_html(number_format_i18n($rLd)) . '</strong>'
+            ); ?></p>
+        </div>
+    <?php endif; ?>
+    <?php if (!empty($_GET['reprocessed'])) :
+        $rpScanned     = isset($_GET['rp_scanned'])      ? (int) $_GET['rp_scanned']      : 0;
+        $rpUpdated     = isset($_GET['rp_updated'])      ? (int) $_GET['rp_updated']      : 0;
+        $rpQualified   = isset($_GET['rp_qualified'])    ? (int) $_GET['rp_qualified']    : 0;
+        $rpDisq        = isset($_GET['rp_disqualified']) ? (int) $_GET['rp_disqualified'] : 0;
+        $rpStill       = isset($_GET['rp_still_unknown'])? (int) $_GET['rp_still_unknown']: 0;
+        $rpSkipped     = isset($_GET['rp_skipped'])      ? (int) $_GET['rp_skipped']      : 0;
+        $rpErrors      = isset($_GET['rp_errors'])       ? (int) $_GET['rp_errors']       : 0;
+        ?>
+        <div class="notice notice-success is-dismissible">
+            <p>
+                <strong><?php esc_html_e('Unknown leads re-processed.', 'cah-split'); ?></strong><br />
+                <?php printf(
+                    esc_html__('Scanned: %1$s · Updated: %2$s · Qualified: %3$s · Disqualified: %4$s · Still unknown: %5$s · Skipped (no payload): %6$s · Errors: %7$s', 'cah-split'),
+                    '<strong>' . esc_html(number_format_i18n($rpScanned)) . '</strong>',
+                    '<strong>' . esc_html(number_format_i18n($rpUpdated)) . '</strong>',
+                    '<strong>' . esc_html(number_format_i18n($rpQualified)) . '</strong>',
+                    '<strong>' . esc_html(number_format_i18n($rpDisq)) . '</strong>',
+                    '<strong>' . esc_html(number_format_i18n($rpStill)) . '</strong>',
+                    '<strong>' . esc_html(number_format_i18n($rpSkipped)) . '</strong>',
+                    '<strong>' . esc_html(number_format_i18n($rpErrors)) . '</strong>'
+                ); ?>
+            </p>
+        </div>
     <?php endif; ?>
     <?php if ($userErr) : ?>
         <div class="notice notice-error is-dismissible"><p><?php echo esc_html((string) $userErr); ?></p></div>
@@ -99,7 +136,7 @@ $availableFiles = VariantRenderer::availableFiles();
 
         <h2><?php esc_html_e('Variants', 'cah-split'); ?></h2>
         <p class="description">
-            <?php esc_html_e('Weights must sum to 100. For plugin-hosted variants, drop an HTML file into the plugin\'s variants/ directory (via FTP/SSH) and select it below. For external variants, leave the dropdown on "External URL" and fill the URL field.', 'cah-split'); ?>
+            <?php esc_html_e('Weights must sum to 100. For plugin-hosted variants, drop an HTML file into the plugin\'s variants/ directory (via FTP/SSH) and select it below. For external variants, leave the dropdown on "External URL" and fill the URL field. Optional "Pretty path" lets a plugin-hosted variant be served at a clean URL like /my-page-b/ instead of /_cah/v/<test>/<variant>/. Leave empty to keep the default URL. Pretty paths are only used when the path does not already match a real WordPress page.', 'cah-split'); ?>
         </p>
         <?php if (empty($availableFiles)) : ?>
             <div class="notice notice-warning inline">
@@ -121,6 +158,7 @@ $availableFiles = VariantRenderer::availableFiles();
                     <th><?php esc_html_e('Slug', 'cah-split'); ?></th>
                     <th><?php esc_html_e('HTML file', 'cah-split'); ?></th>
                     <th><?php esc_html_e('External URL', 'cah-split'); ?></th>
+                    <th><?php esc_html_e('Pretty path', 'cah-split'); ?></th>
                     <th style="width: 80px;"><?php esc_html_e('Weight', 'cah-split'); ?></th>
                     <th style="width: 60px;"></th>
                 </tr>
@@ -150,6 +188,7 @@ $availableFiles = VariantRenderer::availableFiles();
                             </select>
                         </td>
                         <td><input type="text" inputmode="url" name="variants[<?php echo (int) $i; ?>][url]" value="<?php echo esc_attr((string) ($v['url'] ?? '')); ?>" placeholder="<?php esc_attr_e('leave empty if using an HTML file', 'cah-split'); ?>" /></td>
+                        <td><input type="text" name="variants[<?php echo (int) $i; ?>][pretty_path]" value="<?php echo esc_attr((string) ($v['pretty_path'] ?? '')); ?>" placeholder="car-accident-b" class="code" /></td>
                         <td><input type="number" min="0" max="100" step="1" name="variants[<?php echo (int) $i; ?>][weight]" value="<?php echo esc_attr((string) ($v['weight'] ?? 0)); ?>" class="small-text cah-weight" /></td>
                         <td><button type="button" class="button-link-delete cah-remove-variant"><?php esc_html_e('Remove', 'cah-split'); ?></button></td>
                     </tr>
@@ -157,7 +196,7 @@ $availableFiles = VariantRenderer::availableFiles();
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="4"><button type="button" class="button" id="cah-add-variant"><?php esc_html_e('+ Add variant', 'cah-split'); ?></button></td>
+                    <td colspan="5"><button type="button" class="button" id="cah-add-variant"><?php esc_html_e('+ Add variant', 'cah-split'); ?></button></td>
                     <td><strong id="cah-weight-sum">0</strong></td>
                     <td></td>
                 </tr>
@@ -170,4 +209,56 @@ $availableFiles = VariantRenderer::availableFiles();
 
         <?php submit_button($isEdit ? __('Save test', 'cah-split') : __('Create test', 'cah-split')); ?>
     </form>
+
+    <?php if ($isEdit) :
+        $resetUrl = wp_nonce_url(
+            admin_url('admin-post.php?action=cah_split_reset_test_stats&test_id=' . $id),
+            'cah_split_reset_test_stats'
+        );
+        $confirmMsg = sprintf(
+            /* translators: %s: test name */
+            __('Reset ALL stats for "%s"? This permanently deletes every pageview and lead recorded for this test. This cannot be undone.', 'cah-split'),
+            $name
+        );
+        $reprocessUrl = wp_nonce_url(
+            admin_url('admin-post.php?action=cah_split_reprocess_unknown&test_id=' . $id),
+            'cah_split_reprocess_unknown'
+        );
+        $reprocessConfirm = sprintf(
+            /* translators: %s: test name */
+            __('Re-process every lead currently marked as "unknown" for "%s"? This re-runs the current parser and stage classifier against the stored raw payloads and updates the rows. Safe to run multiple times.', 'cah-split'),
+            $name
+        );
+        ?>
+        <hr style="margin-top:32px;" />
+        <div class="cah-maintenance-zone" style="border:1px solid #c3c4c7;background:#f6f7f7;padding:16px 20px;border-radius:4px;margin-top:16px;">
+            <h2 style="margin-top:0;"><?php esc_html_e('Maintenance', 'cah-split'); ?></h2>
+            <p>
+                <strong><?php esc_html_e('Re-process unknown leads', 'cah-split'); ?></strong><br />
+                <?php esc_html_e('Iterates every lead with stage "unknown" for this test, decodes its stored raw payload, and re-runs the current parser + stage classifier. Useful after deploying parser fixes (e.g. v1.0.9). Non-destructive: rows are only updated when re-parsing produces new data.', 'cah-split'); ?>
+            </p>
+            <p>
+                <a href="<?php echo esc_url($reprocessUrl); ?>"
+                   class="button button-secondary"
+                   onclick="return confirm('<?php echo esc_js($reprocessConfirm); ?>');">
+                    <?php esc_html_e('Re-process unknown leads', 'cah-split'); ?>
+                </a>
+            </p>
+        </div>
+        <div class="cah-danger-zone" style="border:1px solid #d63638;background:#fcf0f1;padding:16px 20px;border-radius:4px;margin-top:16px;">
+            <h2 style="margin-top:0;color:#d63638;"><?php esc_html_e('Danger zone', 'cah-split'); ?></h2>
+            <p>
+                <strong><?php esc_html_e('Reset test stats', 'cah-split'); ?></strong><br />
+                <?php esc_html_e('Deletes every pageview and lead recorded for this test. The test configuration (variants, weights, trigger path) is preserved. Use this to start a clean measurement after fixing tracking issues.', 'cah-split'); ?>
+            </p>
+            <p>
+                <a href="<?php echo esc_url($resetUrl); ?>"
+                   class="button button-secondary cah-danger"
+                   style="color:#d63638;border-color:#d63638;"
+                   onclick="return confirm('<?php echo esc_js($confirmMsg); ?>');">
+                    <?php esc_html_e('Reset test stats', 'cah-split'); ?>
+                </a>
+            </p>
+        </div>
+    <?php endif; ?>
 </div>
