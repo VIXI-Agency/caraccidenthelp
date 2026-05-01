@@ -2,3 +2,11 @@
 .vercel
 *.pem
 *.patch
+*.zip
+.claude/
+**/.claude/
+*.png
+*.jpg
+*.jpeg
+!cah-split-tester/variants/public/*.png
+!cah-split-tester/variants/public/*.jpg
