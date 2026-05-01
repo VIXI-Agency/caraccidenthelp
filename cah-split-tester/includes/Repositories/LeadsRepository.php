@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace VIXI\CahSplit\Repositories;
 
+use VIXI\CahSplit\Logger;
+
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -15,12 +17,29 @@ final class LeadsRepository
     public const MAKE_STATUS_FAILED  = 'failed';
     public const MAKE_STATUS_SKIPPED = 'skipped';
 
+    public function __construct(private readonly ?Logger $logger = null)
+    {
+    }
+
     public function table(): string
     {
         global $wpdb;
         return $wpdb->prefix . 'cah_leads';
     }
 
+    /**
+     * Insert a new lead row.
+     *
+     * Throws on DB failure. Previously this method swallowed `$wpdb->insert`
+     * returning false (truncation, schema mismatch, charset error, dropped
+     * connection) and returned `(int) $wpdb->insert_id` which is `0` after a
+     * failure. The caller in RestApi::handleLead would still respond
+     * `success: true, lead_id: 0` and the lead vanished with no audit trail.
+     * This is the prime suspect for the plugin-vs-Hyros undercount.
+     *
+     * Now: if `$wpdb->insert` returns false, log the row + `$wpdb->last_error`
+     * and throw a RuntimeException so the REST handler returns 500.
+     */
     public function create(array $data): int
     {
         global $wpdb;
@@ -31,8 +50,27 @@ final class LeadsRepository
             'created_at'   => $now,
         ], $data);
 
-        $wpdb->insert($this->table(), $row);
-        return (int) $wpdb->insert_id;
+        $result = $wpdb->insert($this->table(), $row);
+        if ($result === false) {
+            $this->logger?->error('leads.repo.insert', 'wpdb->insert returned false', [
+                'wpdb_last_error' => (string) $wpdb->last_error,
+                'test_id'         => $row['test_id']    ?? null,
+                'variant_id'      => $row['variant_id'] ?? null,
+                'visitor_id'      => $row['visitor_id'] ?? null,
+                'lead_stage'      => $row['lead_stage'] ?? null,
+                'email'           => $row['email']      ?? null,
+                'phone'           => $row['phone']      ?? null,
+            ]);
+            throw new \RuntimeException('Lead DB insert failed: ' . (string) $wpdb->last_error);
+        }
+        $id = (int) $wpdb->insert_id;
+        $this->logger?->info('leads.repo.insert', 'lead inserted', [
+            'lead_id'    => $id,
+            'test_id'    => $row['test_id']    ?? null,
+            'variant_id' => $row['variant_id'] ?? null,
+            'lead_stage' => $row['lead_stage'] ?? null,
+        ]);
+        return $id;
     }
 
     public function find(int $id): ?array

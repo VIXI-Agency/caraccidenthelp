@@ -201,3 +201,78 @@
 
 .cah-danger-btn { color: #b32d2e; }
 .cah-danger-btn:hover { color: #b32d2e; border-color: #b32d2e; }
+
+/* Logs page */
+.cah-loglevel {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: .3px;
+    font-family: Consolas, Monaco, monospace;
+    background: #e2e3e5;
+    color: #383d41;
+}
+.cah-loglevel-info  { background: #cfe2ff; color: #084298; }
+.cah-loglevel-warn  { background: #fff3cd; color: #7d5a00; }
+.cah-loglevel-error { background: #f8d7da; color: #842029; }
+
+.cah-log-row.cah-log-error td { background: #fff5f5; }
+.cah-log-row.cah-log-warn  td { background: #fffaf0; }
+
+.cah-logs-table code {
+    font-size: 11.5px;
+    background: #f0f0f1;
+    padding: 1px 6px;
+    border-radius: 3px;
+}
+
+.cah-logs-table pre {
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    max-height: 400px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+}
+
+.cah-log-sources {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 16px;
+    padding: 10px 14px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.cah-source-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    color: #1d2327;
+    background: #f0f0f1;
+    border: 1px solid #dcdcde;
+    padding: 2px 8px 2px 4px;
+    border-radius: 3px;
+}
+.cah-source-pill:hover { background: #e8e8e9; }
+.cah-source-pill code  { background: transparent; padding: 0; font-size: 11px; }
+.cah-source-pill span  { font-weight: 600; color: #50575e; }
+
+.cah-auto-refresh-label {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 13px !important;
+    color: #1d2327 !important;
+}

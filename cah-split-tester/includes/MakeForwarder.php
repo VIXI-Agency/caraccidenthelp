@@ -17,6 +17,7 @@ final class MakeForwarder
     public function __construct(
         private readonly Settings $settings,
         private readonly LeadsRepository $leads,
+        private readonly ?Logger $logger = null,
     ) {
     }
 
@@ -25,6 +26,7 @@ final class MakeForwarder
         $url = $this->settings->makeWebhookUrl();
         if ($url === '') {
             $this->leads->markForwardFailed($leadId, 'No Make.com webhook URL configured.');
+            $this->logger?->error('make.forward.no_url', 'webhook URL not configured', ['lead_id' => $leadId]);
             return false;
         }
 
@@ -43,8 +45,12 @@ final class MakeForwarder
         }
 
         if (\is_wp_error($response)) {
-            $this->leads->markForwardFailed($leadId, $response->get_error_message());
-            \error_log(\sprintf('[cah-split] Make forward failed for lead %d: %s', $leadId, $response->get_error_message()));
+            $msg = $response->get_error_message();
+            $this->leads->markForwardFailed($leadId, $msg);
+            $this->logger?->error('make.forward.wp_error', 'wp_remote_post returned WP_Error', [
+                'lead_id' => $leadId,
+                'error'   => $msg,
+            ]);
             return false;
         }
 
@@ -53,11 +59,20 @@ final class MakeForwarder
 
         if ($code >= 200 && $code < 300) {
             $this->leads->markForwardSuccess($leadId, $body !== '' ? \substr($body, 0, 5000) : null);
+            $this->logger?->info('make.forward.ok', 'forwarded to Make.com', [
+                'lead_id'  => $leadId,
+                'http'     => $code,
+                'response' => \substr($body, 0, 200),
+            ]);
             return true;
         }
 
         $this->leads->markForwardFailed($leadId, \sprintf('HTTP %d: %s', $code, \substr($body, 0, 4000)));
-        \error_log(\sprintf('[cah-split] Make forward non-2xx for lead %d: HTTP %d', $leadId, $code));
+        $this->logger?->error('make.forward.non2xx', \sprintf('non-2xx response (HTTP %d)', $code), [
+            'lead_id'  => $leadId,
+            'http'     => $code,
+            'response' => \substr($body, 0, 500),
+        ]);
         return false;
     }
 

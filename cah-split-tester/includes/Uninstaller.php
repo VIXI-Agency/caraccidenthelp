@@ -89,6 +89,7 @@ final class Uninstaller
         global $wpdb;
         $prefix = $wpdb->prefix;
         $tables = [
+            "{$prefix}cah_log",
             "{$prefix}cah_leads",
             "{$prefix}cah_pageviews",
             "{$prefix}cah_variants",

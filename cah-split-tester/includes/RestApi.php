@@ -25,6 +25,7 @@ final class RestApi
         private readonly LeadStage $leadStage,
         private readonly LeadPayloadParser $parser,
         private readonly MakeForwarder $forwarder,
+        private readonly ?Logger $logger = null,
     ) {
     }
 
@@ -77,6 +78,16 @@ final class RestApi
         $visitorId = isset($body['visitor_id']) ? \sanitize_text_field((string) $body['visitor_id']) : '';
 
         if ($testId <= 0 || $variantId <= 0 || $visitorId === '') {
+            $this->logger?->warn('rest.pageview.400', 'missing identifiers', [
+                'test_id'      => $testId,
+                'variant_id'   => $variantId,
+                'visitor_id'   => $visitorId,
+                'content_type' => (string) $request->get_header('content-type'),
+                'body_preview' => $this->bodyPreview($request),
+                'ip_hash'      => $this->ipHash(),
+                'user_agent'   => $this->truncate((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 200),
+                'referer'      => $this->truncate((string) ($_SERVER['HTTP_REFERER'] ?? ''), 200),
+            ]);
             return new WP_REST_Response(['success' => false, 'message' => 'missing identifiers'], 400);
         }
 
@@ -110,9 +121,37 @@ final class RestApi
 
         $makePayload = $body['make_payload'] ?? null;
 
+        // Log every /lead hit at the entry point, BEFORE any validation, so the
+        // admin Logs page shows the true count of inbound POSTs. This is the
+        // ground truth we'll use to compare against Hyros: every POST that
+        // physically reached the endpoint will produce a log row, even if it
+        // gets rejected below.
+        $this->logger?->info('rest.lead.received', $skipMake ? 'lead received (skip_make)' : 'lead received', [
+            'test_id'         => isset($body['test_id'])    ? (int) $body['test_id']    : null,
+            'variant_id'      => isset($body['variant_id']) ? (int) $body['variant_id'] : null,
+            'visitor_id'      => isset($body['visitor_id']) ? (string) $body['visitor_id'] : null,
+            'skip_make'       => $skipMake,
+            'has_make_payload'=> \is_array($makePayload) && !empty($makePayload),
+            'has_form_meta'   => isset($body['form_meta']) && \is_array($body['form_meta']),
+            'has_fields'      => isset($body['fields']) && \is_array($body['fields']),
+            'content_type'    => (string) $request->get_header('content-type'),
+            'ip_hash'         => $this->ipHash(),
+            'user_agent'      => $this->truncate((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 200),
+            'referer'         => $this->truncate((string) ($_SERVER['HTTP_REFERER'] ?? ''), 200),
+        ]);
+
         // When skip_make is set, make_payload is optional. Otherwise it's required
         // because we need it to forward to Make and to parse lead fields.
         if (!$skipMake && !\is_array($makePayload)) {
+            $this->logger?->warn('rest.lead.400', 'make_payload required but missing/invalid', [
+                'skip_make'      => $skipMake,
+                'body_keys'      => \array_keys($body),
+                'body_preview'   => $this->bodyPreview($request),
+                'content_type'   => (string) $request->get_header('content-type'),
+                'ip_hash'        => $this->ipHash(),
+                'user_agent'     => $this->truncate((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 200),
+                'referer'        => $this->truncate((string) ($_SERVER['HTTP_REFERER'] ?? ''), 200),
+            ]);
             return new WP_REST_Response(['success' => false, 'message' => 'make_payload is required'], 400);
         }
 
@@ -161,7 +200,16 @@ final class RestApi
         try {
             $leadId = $this->leads->create($data);
         } catch (\Throwable $e) {
-            \error_log('[cah-split] Lead insert failed: ' . $e->getMessage());
+            $this->logger?->error('rest.lead.500', 'lead insert threw', [
+                'exception'  => $e->getMessage(),
+                'test_id'    => $data['test_id']    ?? null,
+                'variant_id' => $data['variant_id'] ?? null,
+                'visitor_id' => $data['visitor_id'] ?? null,
+                'lead_stage' => $stage,
+                'email'      => $data['email']      ?? null,
+                'phone'      => $data['phone']      ?? null,
+                'ip_hash'    => $this->ipHash(),
+            ]);
             return new WP_REST_Response([
                 'success' => false,
                 'message' => 'Lead could not be saved.',
@@ -174,7 +222,10 @@ final class RestApi
             try {
                 $this->leads->markForwardSkipped($leadId, 'Client sent skip_make=true (e.g., Growform handles Make directly).');
             } catch (\Throwable $e) {
-                \error_log('[cah-split] markForwardSkipped failed: ' . $e->getMessage());
+                $this->logger?->error('rest.lead.skipped.fail', 'markForwardSkipped threw', [
+                    'lead_id'   => $leadId,
+                    'exception' => $e->getMessage(),
+                ]);
             }
         } else {
             // Forward to Make.com in BLOCKING mode so make_status is updated correctly.
@@ -185,9 +236,24 @@ final class RestApi
             try {
                 $this->forwarder->forward($leadId, $makePayload, true);
             } catch (\Throwable $e) {
-                \error_log('[cah-split] Make forward dispatch failed: ' . $e->getMessage());
+                $this->logger?->error('rest.lead.forward.fail', 'forward dispatch threw', [
+                    'lead_id'   => $leadId,
+                    'exception' => $e->getMessage(),
+                ]);
             }
         }
+
+        $this->logger?->info('rest.lead.created', 'lead persisted', [
+            'lead_id'      => $leadId,
+            'test_id'      => $data['test_id']    ?? null,
+            'variant_id'   => $data['variant_id'] ?? null,
+            'visitor_id'   => $data['visitor_id'] ?? null,
+            'lead_stage'   => $stage,
+            'skip_make'    => $skipMake,
+            'has_email'    => !empty($data['email']),
+            'has_phone'    => !empty($data['phone']),
+            'service_type' => $data['service_type'] ?? null,
+        ]);
 
         return new WP_REST_Response([
             'success'      => true,
@@ -236,5 +302,16 @@ final class RestApi
             return null;
         }
         return \hash('sha256', $ip . '|' . $this->settings->ipHashSalt());
+    }
+
+    /**
+     * Capture the first 500 chars of the raw request body so admin Logs can
+     * see why a request was rejected without re-parsing. Safe to log even on
+     * malformed JSON because we treat it as opaque text.
+     */
+    private function bodyPreview(WP_REST_Request $request): string
+    {
+        $raw = (string) $request->get_body();
+        return \substr($raw, 0, 500);
     }
 }

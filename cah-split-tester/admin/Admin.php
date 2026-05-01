@@ -7,6 +7,7 @@ namespace VIXI\CahSplit\Admin;
 use VIXI\CahSplit\LeadReprocessor;
 use VIXI\CahSplit\MakeForwarder;
 use VIXI\CahSplit\Repositories\LeadsRepository;
+use VIXI\CahSplit\Repositories\LogsRepository;
 use VIXI\CahSplit\Repositories\PageviewsRepository;
 use VIXI\CahSplit\Repositories\StatsRepository;
 use VIXI\CahSplit\Repositories\TestsRepository;
@@ -23,9 +24,12 @@ final class Admin
     public const MENU_SLUG     = 'cah-split';
     public const TESTS_SLUG    = 'cah-split-tests';
     public const LEADS_SLUG    = 'cah-split-leads';
+    public const LOGS_SLUG     = 'cah-split-logs';
     public const SETTINGS_SLUG = 'cah-split-settings';
 
     public const CAPABILITY = 'manage_options';
+
+    public const LOGS_AUTO_REFRESH_SECONDS = 10;
 
     public function __construct(
         private readonly Settings $settings,
@@ -37,6 +41,7 @@ final class Admin
         private readonly Significance $significance,
         private readonly MakeForwarder $forwarder,
         private readonly LeadReprocessor $reprocessor,
+        private readonly ?LogsRepository $logsRepo = null,
     ) {
     }
 
@@ -54,6 +59,7 @@ final class Admin
         \add_action('admin_post_cah_split_retry_make', [$this, 'handleRetryMake']);
         \add_action('admin_post_cah_split_reset_test_stats', [$this, 'handleResetTestStats']);
         \add_action('admin_post_cah_split_reprocess_unknown', [$this, 'handleReprocessUnknown']);
+        \add_action('admin_post_cah_split_clear_logs', [$this, 'handleClearLogs']);
     }
 
     public function registerMenu(): void
@@ -93,6 +99,15 @@ final class Admin
             self::CAPABILITY,
             self::LEADS_SLUG,
             [$this, 'renderLeads']
+        );
+
+        \add_submenu_page(
+            self::MENU_SLUG,
+            \__('Logs', 'cah-split'),
+            \__('Logs', 'cah-split'),
+            self::CAPABILITY,
+            self::LOGS_SLUG,
+            [$this, 'renderLogs']
         );
 
         \add_submenu_page(
@@ -333,6 +348,60 @@ final class Admin
             $filters['to'] = $to . ' 23:59:59';
         }
         return $filters;
+    }
+
+    public function renderLogs(): void
+    {
+        if ($this->logsRepo === null) {
+            // Should never happen post-1.0.14 since Plugin singleton always
+            // injects this — guard for legacy upgrade paths anyway.
+            \wp_die(\esc_html__('Logs repository not available. Re-activate the plugin.', 'cah-split'));
+        }
+
+        $filters = $this->parseLogFilters();
+        $page    = isset($_GET['paged']) ? \max(1, (int) $_GET['paged']) : 1;
+        $perPage = 100;
+
+        $autoRefresh = !empty($_GET['auto']);
+
+        $this->renderView('logs', [
+            'logs'               => $this->logsRepo->query($filters, $page, $perPage),
+            'totalLogs'          => $this->logsRepo->count($filters),
+            'page'               => $page,
+            'perPage'            => $perPage,
+            'filters'            => $filters,
+            'bySource'           => $this->logsRepo->countBySource(24),
+            'byLevel'            => $this->logsRepo->countByLevel(24),
+            'autoRefresh'        => $autoRefresh,
+            'autoRefreshSeconds' => self::LOGS_AUTO_REFRESH_SECONDS,
+        ]);
+    }
+
+    private function parseLogFilters(): array
+    {
+        $filters = [
+            'level'  => isset($_GET['level'])  ? \sanitize_key((string) $_GET['level'])  : '',
+            'source' => isset($_GET['source']) ? \sanitize_text_field((string) $_GET['source']) : '',
+            'search' => isset($_GET['search']) ? \sanitize_text_field((string) $_GET['search']) : '',
+        ];
+        $from = isset($_GET['from']) ? \sanitize_text_field((string) $_GET['from']) : '';
+        $to   = isset($_GET['to']) ? \sanitize_text_field((string) $_GET['to']) : '';
+        if (\preg_match('/^\d{4}-\d{2}-\d{2}$/', $from)) {
+            $filters['from'] = $from . ' 00:00:00';
+        }
+        if (\preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)) {
+            $filters['to'] = $to . ' 23:59:59';
+        }
+        return $filters;
+    }
+
+    public function handleClearLogs(): void
+    {
+        $this->assertCap();
+        \check_admin_referer('cah_split_clear_logs');
+
+        $deleted = $this->logsRepo?->truncate() ?? 0;
+        $this->redirectTo(self::LOGS_SLUG, ['cleared' => (string) $deleted]);
     }
 
     public function renderSettings(): void

@@ -6,6 +6,7 @@ namespace VIXI\CahSplit;
 
 use VIXI\CahSplit\Admin\Admin;
 use VIXI\CahSplit\Repositories\LeadsRepository;
+use VIXI\CahSplit\Repositories\LogsRepository;
 use VIXI\CahSplit\Repositories\PageviewsRepository;
 use VIXI\CahSplit\Repositories\StatsRepository;
 use VIXI\CahSplit\Repositories\TestsRepository;
@@ -25,6 +26,8 @@ final class Plugin
     public readonly VariantsRepository $variants;
     public readonly LeadsRepository $leads;
     public readonly PageviewsRepository $pageviews;
+    public readonly LogsRepository $logsRepo;
+    public readonly Logger $logger;
     public readonly StatsRepository $stats;
     public readonly Significance $significance;
     public readonly LeadStage $leadStage;
@@ -42,13 +45,15 @@ final class Plugin
         $this->settings        = new Settings();
         $this->tests           = new TestsRepository();
         $this->variants        = new VariantsRepository();
-        $this->leads           = new LeadsRepository();
+        $this->logsRepo        = new LogsRepository();
+        $this->logger          = new Logger($this->logsRepo);
+        $this->leads           = new LeadsRepository($this->logger);
         $this->pageviews       = new PageviewsRepository();
         $this->stats           = new StatsRepository($this->settings);
         $this->significance    = new Significance();
         $this->leadStage       = new LeadStage();
         $this->parser          = new LeadPayloadParser();
-        $this->forwarder       = new MakeForwarder($this->settings, $this->leads);
+        $this->forwarder       = new MakeForwarder($this->settings, $this->leads, $this->logger);
         $this->variantRenderer = new VariantRenderer($this->settings);
         $this->router          = new Router($this->tests, $this->variants, $this->settings, $this->variantRenderer);
         $this->restApi         = new RestApi(
@@ -58,8 +63,9 @@ final class Plugin
             $this->leadStage,
             $this->parser,
             $this->forwarder,
+            $this->logger,
         );
-        $this->cron            = new Cron($this->forwarder);
+        $this->cron            = new Cron($this->forwarder, $this->logsRepo);
         $this->reprocessor     = new LeadReprocessor(
             $this->leads,
             $this->parser,
@@ -75,6 +81,7 @@ final class Plugin
             $this->significance,
             $this->forwarder,
             $this->reprocessor,
+            $this->logsRepo,
         );
     }
 

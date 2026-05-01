@@ -50,7 +50,11 @@
                 var blob = new Blob([body], { type: 'application/json' });
                 if (navigator.sendBeacon(url, blob)) { return; }
             }
-        } catch (e) {}
+        } catch (e) {
+            // Surface for QA — Hostinger has no debug.log so the only place
+            // these failures can show up is the browser console.
+            try { console.warn('[cah-split] sendBeacon threw', e); } catch (_) {}
+        }
         try {
             fetch(url, {
                 method: 'POST',
@@ -61,8 +65,12 @@
                 },
                 body: JSON.stringify(payload),
                 keepalive: true
-            }).catch(function () {});
-        } catch (e) {}
+            }).catch(function (err) {
+                try { console.warn('[cah-split] beacon fetch failed', err); } catch (_) {}
+            });
+        } catch (e) {
+            try { console.warn('[cah-split] beacon fetch threw', e); } catch (_) {}
+        }
     }
 
     function trackPageview() {
@@ -86,8 +94,20 @@
             body: JSON.stringify(body),
             keepalive: true
         }).then(function (res) {
-            if (!res.ok) { return { success: false, status: res.status }; }
-            return res.json().catch(function () { return { success: false }; });
+            if (!res.ok) {
+                try { console.warn('[cah-split] /lead non-2xx', res.status); } catch (_) {}
+                return { success: false, status: res.status };
+            }
+            return res.json().catch(function (err) {
+                try { console.warn('[cah-split] /lead body parse failed', err); } catch (_) {}
+                return { success: false };
+            });
+        }).catch(function (err) {
+            // Network failure, CORS, fetch aborted by navigation, etc. Used to
+            // be silently swallowed — the form's outer .catch would then
+            // discard everything. Now at least DevTools shows it.
+            try { console.warn('[cah-split] /lead fetch failed', err); } catch (_) {}
+            return { success: false, error: String(err && err.message || err) };
         });
     }
 

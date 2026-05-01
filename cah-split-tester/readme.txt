@@ -3,7 +3,7 @@ Contributors: vixi-agency
 Tags: a/b testing, split testing, lead generation
 Requires at least: 6.2
 Requires PHP: 8.1
-Stable tag: 1.0.13
+Stable tag: 1.0.14
 License: Proprietary
 
 Generic A/B/N split testing for caraccidenthelp.net. WordPress is the source of truth for leads; Make.com is forwarded server-side after the lead is persisted.
@@ -35,6 +35,16 @@ The plugin ships with a hand-rolled PSR-4 autoloader used as a fallback when no 
 from the plugin root. No runtime dependencies are required.
 
 == Changelog ==
+
+= 1.0.14 =
+* **Observability foundation.** Added DB-backed plugin log (`wp_cah_log`) with a new admin "Logs" submenu (Split Tester → Logs). Every `/lead` and `/pageview` REST hit now produces a row, including 400 rejections (with first 500 chars of the raw body, content-type, IP hash, and User-Agent), 500 errors (with `$wpdb->last_error` and the row that failed to insert), successful inserts (test/variant/stage/has_email/has_phone), and Make.com forward outcomes (HTTP code + first 500 chars of response). Sources are short tags like `rest.lead.received`, `rest.lead.created`, `rest.lead.400`, `rest.lead.500`, `leads.repo.insert`, `make.forward.ok`, `make.forward.non2xx`, `make.forward.wp_error`, so admins can filter by source pill.
+* **Critical fix:** `LeadsRepository::create()` now throws `RuntimeException` with `$wpdb->last_error` when `$wpdb->insert()` returns false, instead of silently returning `lead_id=0` and letting `RestApi::handleLead` respond `success: true, lead_id: 0`. Suspected primary cause of the plugin-vs-Hyros undercount: any insert that hit a charset/truncation/schema error was vanishing with no audit trail.
+* **Logger** is a thin service that dual-writes to `wp_cah_log` AND PHP `error_log()` so existing log readers keep working. Context is stored as JSON, individual rows truncated at 500 chars (message) and 20 KB (context). Logger failures never propagate to the request — they fall back to `error_log`.
+* **Admin Logs page** features: 24h info/warn/error metric tiles, last-24h source breakdown as clickable filter pills, level + source + free-text search + date-range filters, paginated 100/page, expandable context (pretty-printed JSON), "Clear all logs" button (capability + nonce protected), optional auto-refresh every 10s for live monitoring during QA. Pre-styled level badges via `.cah-loglevel-*`. Custom helper text on the page describes how to use `rest.lead.received` vs `rest.lead.created` counts to localize a plugin-vs-Hyros gap to client-side or server-side.
+* **Cron**: new daily `cah_split_prune_logs` event prunes log rows older than 14 days. `Cron::unschedule()` now removes both events on deactivation. `LogsRepository` exposes `pruneOlderThanDays()`, `truncate()`, `count()`, `query()`, `countBySource()`, `countByLevel()`.
+* **MakeForwarder** error_log calls migrated to `Logger->error/info` so retries and webhook outcomes are visible in the Logs page (existing error_log output is preserved via dual write).
+* **tracking.js** `.catch(function(){})` blocks now log to `console.warn` so QA can spot `/lead` non-2xx, body parse failures, network errors, and `sendBeacon`/keepalive failures in DevTools instead of having them silently swallowed. No behavior change otherwise.
+* **DB migration:** `dbDelta` adds `wp_cah_log (id, level, source, message, context LONGTEXT, created_at)` with three indexes (level+date, source+date, created_at). Uninstaller drop-tables list updated.
 
 = 1.0.13 =
 * Added an optional **Pretty path** field per variant. When set, a plugin-hosted variant (one with an `HTML file` selected) is served at a clean top-level URL like `/car-accident-b/` instead of the default `/_cah/v/<test-slug>/<variant-slug>/` path. The plugin renders the variant in place (no 302 redirect) so the address bar stays on the pretty URL.

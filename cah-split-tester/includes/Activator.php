@@ -142,10 +142,24 @@ final class Activator
             KEY idx_make_status (make_status)
         ) {$charsetCollate};";
 
+        $log = "CREATE TABLE {$prefix}cah_log (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            level VARCHAR(10) NOT NULL DEFAULT 'info',
+            source VARCHAR(64) NOT NULL,
+            message VARCHAR(500) NOT NULL,
+            context LONGTEXT,
+            created_at DATETIME NOT NULL,
+            PRIMARY KEY  (id),
+            KEY idx_level_date (level, created_at),
+            KEY idx_source_date (source, created_at),
+            KEY idx_created_at (created_at)
+        ) {$charsetCollate};";
+
         \dbDelta($tests);
         \dbDelta($variants);
         \dbDelta($pageviews);
         \dbDelta($leads);
+        \dbDelta($log);
     }
 
     private static function seedDefaultSettings(): void
