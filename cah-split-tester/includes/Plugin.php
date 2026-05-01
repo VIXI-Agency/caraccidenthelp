@@ -55,7 +55,7 @@ final class Plugin
         $this->parser          = new LeadPayloadParser();
         $this->forwarder       = new MakeForwarder($this->settings, $this->leads, $this->logger);
         $this->variantRenderer = new VariantRenderer($this->settings);
-        $this->router          = new Router($this->tests, $this->variants, $this->settings, $this->variantRenderer);
+        $this->router          = new Router($this->tests, $this->variants, $this->settings, $this->variantRenderer, $this->logger);
         $this->restApi         = new RestApi(
             $this->settings,
             $this->leads,

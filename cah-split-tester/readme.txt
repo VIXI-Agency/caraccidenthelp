@@ -3,7 +3,7 @@ Contributors: vixi-agency
 Tags: a/b testing, split testing, lead generation
 Requires at least: 6.2
 Requires PHP: 8.1
-Stable tag: 1.0.14
+Stable tag: 1.0.15
 License: Proprietary
 
 Generic A/B/N split testing for caraccidenthelp.net. WordPress is the source of truth for leads; Make.com is forwarded server-side after the lead is persisted.
@@ -35,6 +35,16 @@ The plugin ships with a hand-rolled PSR-4 autoloader used as a fallback when no 
 from the plugin root. No runtime dependencies are required.
 
 == Changelog ==
+
+= 1.0.15 =
+* **Hotfix to 1.0.14 observability — close two visibility gaps that left the Logs page empty for normal traffic.**
+* `RestApi::handlePageview` was instrumented for 400 rejections only; successful pageviews were not logged. Added `rest.pageview.received` info log on every successful `/pageview` insert with test/variant/visitor IDs, UTM source/campaign, referer, path, IP hash, and User-Agent. Now any plugin-hosted variant visit produces a log row as soon as `tracking.js` fires.
+* `Router` had no logger at all — every 302 redirect, every pretty-path render, every legacy `/_cah/v/` render was invisible. Added `?Logger $logger = null` to `Router::__construct` (wired in `Plugin::__construct`) and emit:
+  * `router.bucket` (info) — every time a visitor on the trigger path is bucketed and 302'd; includes `cookie_hit` flag so sticky-vs-fresh assignments are visible at a glance, plus the redirect target so external Growform variants are also auditable.
+  * `router.pretty_render` (info) — every time a plugin-hosted variant is rendered in place via its `pretty_path`.
+  * `router.legacy_render` (info) — every time the `/_cah/v/<test>/<variant>/` legacy URL is rendered.
+  * `router.bucket.no_variants` (warn) — the rare case where the trigger path matched an active test but no variant qualified (e.g., all weights are 0). Helps explain visitors who hit the trigger and got a normal WP 200 with no redirect.
+* No DB schema changes. dbDelta still runs idempotently via `Activator::migrateIfNeeded`.
 
 = 1.0.14 =
 * **Observability foundation.** Added DB-backed plugin log (`wp_cah_log`) with a new admin "Logs" submenu (Split Tester → Logs). Every `/lead` and `/pageview` REST hit now produces a row, including 400 rejections (with first 500 chars of the raw body, content-type, IP hash, and User-Agent), 500 errors (with `$wpdb->last_error` and the row that failed to insert), successful inserts (test/variant/stage/has_email/has_phone), and Make.com forward outcomes (HTTP code + first 500 chars of response). Sources are short tags like `rest.lead.received`, `rest.lead.created`, `rest.lead.400`, `rest.lead.500`, `leads.repo.insert`, `make.forward.ok`, `make.forward.non2xx`, `make.forward.wp_error`, so admins can filter by source pill.

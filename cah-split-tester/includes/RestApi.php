@@ -106,6 +106,18 @@ final class RestApi
             'ip_hash'     => $this->ipHash(),
         ]);
 
+        $this->logger?->info('rest.pageview.received', 'pageview tracked', [
+            'test_id'    => $testId,
+            'variant_id' => $variantId,
+            'visitor_id' => $visitorId,
+            'utm_source' => $this->str($body, 'utm_source'),
+            'utm_campaign' => $this->str($body, 'utm_campaign'),
+            'referrer'   => $this->truncate($this->str($body, 'referrer'), 200),
+            'path'       => $this->str($body, 'path'),
+            'user_agent' => $this->truncate((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 200),
+            'ip_hash'    => $this->ipHash(),
+        ]);
+
         return new WP_REST_Response(['success' => true], 201);
     }
 

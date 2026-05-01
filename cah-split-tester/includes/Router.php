@@ -24,6 +24,7 @@ final class Router
         private readonly VariantsRepository $variants,
         private readonly Settings $settings,
         private readonly VariantRenderer $renderer,
+        private readonly ?Logger $logger = null,
     ) {
     }
 
@@ -137,6 +138,17 @@ final class Router
         \status_header(200);
         $this->sendNoCacheHeaders('pretty-path-render');
 
+        $this->logger?->info('router.pretty_render', 'rendered plugin-hosted variant via pretty path', [
+            'path'         => $path,
+            'test_id'      => (int) $test['id'],
+            'test_slug'    => (string) ($test['slug'] ?? ''),
+            'variant_id'   => (int) $variant['id'],
+            'variant_slug' => (string) ($variant['slug'] ?? ''),
+            'visitor_id'   => $visitorId,
+            'user_agent'   => \substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 200),
+            'referer'      => \substr((string) ($_SERVER['HTTP_REFERER'] ?? ''), 0, 200),
+        ]);
+
         $this->renderer->render($test, $variant, $visitorId);
         exit;
     }
@@ -160,6 +172,14 @@ final class Router
 
         $visitorId = $this->ensureVisitorCookie((int) $test['id'], (int) $variant['id']);
 
+        $this->logger?->info('router.legacy_render', 'rendered plugin-hosted variant via /_cah/v/ legacy route', [
+            'test_id'      => (int) $test['id'],
+            'test_slug'    => $testSlug,
+            'variant_id'   => (int) $variant['id'],
+            'variant_slug' => $variantSlug,
+            'visitor_id'   => $visitorId,
+        ]);
+
         $this->renderer->render($test, $variant, $visitorId);
         exit;
     }
@@ -168,6 +188,7 @@ final class Router
     {
         $cookie = $this->readCookie($testId);
         $variant = null;
+        $cookieHit = false;
 
         if ($cookie !== null) {
             $variant = $this->variants->find($cookie['variant_id']);
@@ -175,6 +196,8 @@ final class Router
                 || (int) $variant['test_id'] !== $testId
                 || (int) $variant['weight'] <= 0) {
                 $variant = null;
+            } else {
+                $cookieHit = true;
             }
         }
 
@@ -183,6 +206,9 @@ final class Router
         }
 
         if ($variant === null) {
+            $this->logger?->warn('router.bucket.no_variants', 'trigger path matched but no eligible variant', [
+                'test_id' => $testId,
+            ]);
             return;
         }
 
@@ -192,6 +218,18 @@ final class Router
         $this->sendNoCacheHeaders('router-redirect');
 
         $target = $this->appendQueryString((string) $variant['url']);
+
+        $this->logger?->info('router.bucket', $cookieHit ? 'sticky bucket via cookie' : 'fresh weighted bucket', [
+            'test_id'      => $testId,
+            'variant_id'   => (int) $variant['id'],
+            'variant_slug' => (string) ($variant['slug'] ?? ''),
+            'visitor_id'   => $visitorId,
+            'cookie_hit'   => $cookieHit,
+            'target'       => $target,
+            'user_agent'   => \substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 200),
+            'referer'      => \substr((string) ($_SERVER['HTTP_REFERER'] ?? ''), 0, 200),
+        ]);
+
         \wp_redirect($target, 302);
         exit;
     }
