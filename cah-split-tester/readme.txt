@@ -3,7 +3,7 @@ Contributors: vixi-agency
 Tags: a/b testing, split testing, lead generation
 Requires at least: 6.2
 Requires PHP: 8.1
-Stable tag: 1.0.20
+Stable tag: 1.0.21
 License: Proprietary
 
 Generic A/B/N split testing for caraccidenthelp.net. WordPress is the source of truth for leads; Make.com is forwarded server-side after the lead is persisted.
@@ -35,6 +35,11 @@ The plugin ships with a hand-rolled PSR-4 autoloader used as a fallback when no 
 from the plugin root. No runtime dependencies are required.
 
 == Changelog ==
+
+= 1.0.21 =
+* **CRITICAL: Fix server-side qualified logic in `LeadStage::compute()`** — the third and most impactful copy of the same `service_type` whitelist bug fixed in v1.0.19. The PHP backend was hardcoding `QUALIFIED_SERVICES = ['car_accident','motorcycle_accident','trucking_accident']` as a REQUIRED condition for `lead_stage = qualified`. Every lead with any other service_type (bicycle/e-bike, pedestrian, accident-or-injury-at-work, other) was silently overridden to `disqualified` at the server, regardless of attorney/fault/injury/timeframe answers. This affected **BOTH** Growform-fed Control AND HTML V1 — unlike the v1.0.19 JS fix which only affected HTML V1, this server fix corrects every variant. SQL audit of test_id=2 confirmed Growform was sending leads with `attorney="I Have An Attorney"` correctly, but the server was overriding many other accident types to disqualified before saving. Going forward, ALL accident types are treated equally; disqualification depends ONLY on attorney/fault/injury/timeframe.
+* **Required-fields list trimmed** — `service_type` is no longer required to compute a stage (only attorney/fault/injury/timeframe). A lead with all four answers but no service_type is now classified normally instead of being marked `unknown`.
+* **Zero schema/UX changes; pure logic fix.** Existing rows in DB are unchanged — a separate one-time SQL recovery (provided alongside this release) re-classifies historical disqualified leads that meet the 4 real qualifier rules.
 
 = 1.0.20 =
 * **Leads page — new question columns** (`admin/views/leads-list.php`): added `Attorney`, `Fault`, `Injury`, `Timeframe` columns so operators can audit each lead's qualification at a glance without expanding the raw payload. Disqualifying answers (`has_attorney`, `fault=yes`, `injury=no`, `timeframe IN (within_2_year, longer_than_2_year)`) are highlighted in red so the disqualification reason is visually obvious. Empty/NULL values render as a faint em-dash so it's clear when a form did not submit a value for that field (key for diagnosing Growform vs HTML mapping mismatches).
