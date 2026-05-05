@@ -272,6 +272,10 @@ final class Admin
             'first_name', 'last_name', 'email', 'phone', 'state', 'zipcode',
             'service_type', 'attorney', 'fault', 'injury', 'timeframe', 'insured',
             'describe_accident', 'lead_stage',
+            // v1.0.23: Twilio number-validation status.
+            'twilio_lookup_status',
+            // v1.0.24: Trestle reverse phone lookup result.
+            'trestle_first_name', 'trestle_last_name', 'trestle_email',
             'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
             'utm_adname', 'utm_adid', 'utm_adsetid', 'utm_adsetname',
             'utm_campaignid', 'utm_placement', 'utm_sitesourcename', 'utm_creative', 'utm_state',
@@ -302,6 +306,12 @@ final class Admin
                     $row['insured'] ?? '',
                     $row['describe_accident'] ?? '',
                     $row['lead_stage'] ?? '',
+                    // v1.0.23: Twilio number-validation status.
+                    $row['twilio_lookup_status'] ?? '',
+                    // v1.0.24: Trestle reverse phone lookup result.
+                    $row['trestle_first_name'] ?? '',
+                    $row['trestle_last_name'] ?? '',
+                    $row['trestle_email'] ?? '',
                     $row['utm_source'] ?? '',
                     $row['utm_medium'] ?? '',
                     $row['utm_campaign'] ?? '',

@@ -5,6 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 use VIXI\CahSplit\Admin\Admin;
+use VIXI\CahSplit\LeadStage;
 use VIXI\CahSplit\RestApi;
 
 /** @var array<int,array<string,mixed>> $leads */
@@ -198,7 +199,20 @@ function cah_source_to_form_type(string $source): string
                         </td>
                         <td><span class="cah-form cah-form-<?php echo esc_attr(strtolower($formType)); ?>"><?php echo esc_html($formType); ?></span></td>
                         <td><?php echo esc_html((string) ($lead['state'] ?? '')); ?></td>
-                        <td><?php echo esc_html((string) ($lead['service_type'] ?? '')); ?></td>
+                        <td><?php
+                            // v1.0.24: highlight Service in red when the service_type is a
+                            // disqualifier (anything outside LeadStage::QUALIFIED_SERVICES).
+                            // Only Car / Motorcycle / Trucking can produce a qualified lead;
+                            // every other accident type auto-disqualifies the lead.
+                            $svc = (string) ($lead['service_type'] ?? '');
+                            if ($svc === '') {
+                                echo '<span class="cah-qa-empty" title="' . esc_attr__('Field not submitted by form (NULL or empty)', 'cah-split') . '">—</span>';
+                            } else {
+                                $isQualSvc = in_array($svc, LeadStage::QUALIFIED_SERVICES, true);
+                                $cls = $isQualSvc ? 'cah-qa' : 'cah-qa cah-qa-disq';
+                                echo '<span class="' . esc_attr($cls) . '" title="' . esc_attr($isQualSvc ? __('Qualifying service type', 'cah-split') : __('Disqualifying service type (only car/motorcycle/trucking accidents can qualify)', 'cah-split')) . '">' . esc_html($svc) . '</span>';
+                            }
+                        ?></td>
                         <td><?php echo cah_render_qa((string) ($lead['attorney']  ?? ''), ['has_attorney']); ?></td>
                         <td><?php echo cah_render_qa((string) ($lead['fault']     ?? ''), ['yes']); ?></td>
                         <td><?php echo cah_render_qa((string) ($lead['injury']    ?? ''), ['no']); ?></td>

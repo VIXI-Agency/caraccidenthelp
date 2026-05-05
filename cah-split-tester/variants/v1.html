@@ -370,8 +370,9 @@
           <div class="gf-field">
             <label class="gf-label">What is your zip code?</label>
             <input type="text" class="gf-input" id="gfZip" placeholder="What is your zip code?" maxlength="5"
-                   inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'');gfd.zipcode=this.value;">
+                   inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'');gfd.zipcode=this.value;if(this.value.length===5)gfZipLookup(this.value);">
             <div class="gf-err" id="gf-err-7">Please enter a valid 5-digit zip code.</div>
+            <div class="gf-zip-meta" id="gfZipMeta" style="margin-top:6px;font-size:13px;color:#5a6675;display:none;"></div>
           </div>
           <div class="gf-nav">
             <button class="gf-back" onclick="gfPrev()">BACK</button>
@@ -976,7 +977,12 @@ function gfBuildPayload() {
         system_userAgent:                 { type:'Text', label:'System User-Agent',       step: 1, value: navigator.userAgent },
         TrustedForm_certUrl:              { type:'Text', label:'Trusted Form Cert URL',   step: 1, value: tf },
         phone_400747347981930_twilio_lookup_status: { type:'TwilioLookupStatus', label:'phone_400747347981930 Twilio Lookup Status', value: '' },
-        system_ip:                        { type:'Text', label:'System IP',                        value: gfd.ip }
+        system_ip:                        { type:'Text', label:'System IP',                        value: gfd.ip },
+        // v1.0.24: persist Trestle reverse-phone match so we can audit how often
+        // the autocompleted name/email matches what the user actually typed.
+        trestle_first_name:               { type:'Text', label:'Trestle First Name', value: gfTrestle.firstName || '' },
+        trestle_last_name:                { type:'Text', label:'Trestle Last Name',  value: gfTrestle.lastName  || '' },
+        trestle_email:                    { type:'Text', label:'Trestle Email',      value: gfTrestle.email     || '' }
       }
     },
     form_meta: { form_name: 'MVA - English HTML Form' }
@@ -1078,12 +1084,27 @@ function gfSubmit() {
   if (barBack) barBack.style.display = 'none';
 })();
 
-// ── Auto-detect state from IP geolocation ────────────────────
+// ── Auto-detect state + zip from IP geolocation ────────────
+var gfIpZip = '';      // v1.0.24: cache postal from ipapi for the zip step
+var gfIpZipApplied = false;
 (function(){
   fetch('https://ipapi.co/json/')
     .then(function(res){ return res.json(); })
     .then(function(data){
       if (data.ip) gfd.ip = data.ip;
+      // v1.0.24: cache the postal code so the zip step can pre-fill it.
+      if (data.postal && /^\d{5}$/.test(String(data.postal))) {
+        gfIpZip = String(data.postal);
+        // If the zip step input already exists and is empty, populate now.
+        var zipInput = document.getElementById('gfZip');
+        if (zipInput && !zipInput.value) {
+          zipInput.value = gfIpZip;
+          gfd.zipcode = gfIpZip;
+          gfIpZipApplied = true;
+          // Trigger reverse-lookup to render city/county metadata.
+          if (typeof gfZipLookup === 'function') gfZipLookup(gfIpZip);
+        }
+      }
       if (!data.region || data.country_code !== 'US') return;
       if (gfSkipStateStep()) return;
       var sel = document.getElementById('gfStateSelect');
@@ -1100,6 +1121,54 @@ function gfSubmit() {
     })
     .catch(function(){});
 })();
+
+// ── Reverse zip lookup (zippopotam.us) ───────────────────
+var gfZip = { city: '', state: '', stateAbbr: '', county: '', ready: false };
+var gfZipPromise = null;
+var gfZipCache = {};
+function gfZipLookup(zip) {
+  zip = String(zip || '').replace(/\D/g, '');
+  if (zip.length !== 5) return;
+  // De-dupe: avoid hammering the API on every keystroke once we have data.
+  if (gfZipCache[zip]) {
+    Object.assign(gfZip, gfZipCache[zip]);
+    gfZip.ready = true;
+    gfZipRenderMeta();
+    return;
+  }
+  gfZip.ready = false;
+  gfZipPromise = fetch('https://api.zippopotam.us/us/' + zip)
+    .then(function(res){ return res.ok ? res.json() : null; })
+    .then(function(data){
+      if (data && data.places && data.places[0]) {
+        var p = data.places[0];
+        gfZip.city      = p['place name']      || '';
+        gfZip.state     = p.state             || '';
+        gfZip.stateAbbr = p['state abbreviation'] || '';
+        gfZip.county    = '';   // zippopotam doesn't return county
+        gfZipCache[zip] = {
+          city: gfZip.city, state: gfZip.state,
+          stateAbbr: gfZip.stateAbbr, county: gfZip.county
+        };
+        gfd.zipCity      = gfZip.city;
+        gfd.zipState     = gfZip.state;
+        gfd.zipStateAbbr = gfZip.stateAbbr;
+      }
+      gfZip.ready = true;
+      gfZipRenderMeta();
+    })
+    .catch(function(){ gfZip.ready = true; });
+}
+function gfZipRenderMeta() {
+  var meta = document.getElementById('gfZipMeta');
+  if (!meta) return;
+  if (gfZip.city && gfZip.state) {
+    meta.textContent = gfZip.city + ', ' + gfZip.state;
+    meta.style.display = 'block';
+  } else {
+    meta.style.display = 'none';
+  }
+}
 </script>
 
 <!-- TrustedForm — deferred, non-render-blocking -->

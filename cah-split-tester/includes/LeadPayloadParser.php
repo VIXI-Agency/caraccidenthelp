@@ -70,6 +70,11 @@ final class LeadPayloadParser
         // label-based parser falls back to the value 'Validated'/'Not Validated'
         // when present in the submission.
         'twilio_lookup_status' => 'Twilio Lookup Status',
+        // v1.0.24: Trestle reverse phone lookup (CF Worker) auto-fills these on
+        // the v1 HTML phone-step. Make.com forwards them as labelled fields.
+        'trestle_first_name' => 'Trestle First Name',
+        'trestle_last_name'  => 'Trestle Last Name',
+        'trestle_email'      => 'Trestle Email',
     ];
 
     public function parse(array $makePayload): array
@@ -201,6 +206,10 @@ final class LeadPayloadParser
             // Scan the flat keys for any key ending in _twilio_lookup_status (or just
             // 'twilio_lookup_status' if the form was simplified).
             'twilio_lookup_status' => $this->extractTwilioStatus($f),
+            // v1.0.24: Trestle fields when v1 HTML submits via flat querystring.
+            'trestle_first_name'   => $get(['trestle_first_name']),
+            'trestle_last_name'    => $get(['trestle_last_name']),
+            'trestle_email'        => $get(['trestle_email']),
         ];
 
         $out['state']   = \is_string($out['state'])

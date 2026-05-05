@@ -3,7 +3,7 @@ Contributors: vixi-agency
 Tags: a/b testing, split testing, lead generation
 Requires at least: 6.2
 Requires PHP: 8.1
-Stable tag: 1.0.23
+Stable tag: 1.0.24
 License: Proprietary
 
 Generic A/B/N split testing for caraccidenthelp.net. WordPress is the source of truth for leads; Make.com is forwarded server-side after the lead is persisted.
@@ -35,6 +35,36 @@ The plugin ships with a hand-rolled PSR-4 autoloader used as a fallback when no 
 from the plugin root. No runtime dependencies are required.
 
 == Changelog ==
+
+= 1.0.24 =
+* HTML V1 form UX upgrades:
+    * **Auto-fill zip from IP**: ipapi.co `data.postal` is read on page load and
+      pre-populates the zip step. Cached in `gfIpZip`. Auto-triggers
+      `gfZipLookup()` once the field is filled.
+    * **Reverse zip lookup**: typing a 5-digit zip queries
+      `https://api.zippopotam.us/us/{zip}` (free, no auth) and renders
+      `City, ST` meta below the input. Results cached in `gfZipCache` to avoid
+      hammering the API on edits.
+    * **Trestle persistence**: the reverse-phone Trestle match
+      (`firstName`/`lastName`/`email` returned by the CF Worker) is now sent
+      to the server in the Make-style submit payload as `Trestle First Name`,
+      `Trestle Last Name`, `Trestle Email`. Persisted on the lead row.
+* Schema: `inz_cah_leads` gains `trestle_first_name VARCHAR(128)`,
+  `trestle_last_name VARCHAR(128)`, `trestle_email VARCHAR(191)`. dbDelta
+  auto-migrates on activation.
+* `includes/LeadPayloadParser.php`: parses the 3 new Trestle fields from both
+  the Make.com label payload and the flat Growform querystring (skip_make
+  path). Email goes through `sanitize_email()` like the lead email.
+* `includes/Repositories/LeadsRepository.php`: allowlist updated for the 3
+  new columns so `updateParsedFields()` writes them.
+* Admin Leads CSV export (`admin/Admin.php::handleLeadsExport`): adds
+  `twilio_lookup_status` (which was missing since v1.0.23) and the 3 new
+  `trestle_*` columns to both header and row output.
+* Admin Leads list (`admin/views/leads-list.php`): the **Service** cell is
+  now rendered with the `cah-qa-disq` red-badge style whenever the selected
+  service_type is outside `LeadStage::QUALIFIED_SERVICES` (anything other
+  than car/motorcycle/trucking accident). Mirrors the existing red-cell
+  pattern used for the other QA columns.
 
 = 1.0.23 =
 * CONTROL = GROWFORM PARITY: cross-reference of growform.csv (1-4 May 2026, 327 leads)

@@ -356,6 +356,8 @@ final class LeadsRepository
             'service_type', 'attorney', 'fault', 'injury', 'timeframe',
             'state', 'zipcode', 'insured', 'first_name', 'last_name',
             'email', 'phone', 'describe_accident', 'twilio_lookup_status', 'trustedform_cert_url',
+            // v1.0.24: Trestle reverse phone lookup persisted on lead.
+            'trestle_first_name', 'trestle_last_name', 'trestle_email',
             'utm_source', 'utm_medium', 'utm_campaign', 'utm_term',
             'utm_content', 'utm_adname', 'utm_adid', 'utm_adsetid',
             'utm_adsetname', 'utm_campaignid', 'utm_placement',
