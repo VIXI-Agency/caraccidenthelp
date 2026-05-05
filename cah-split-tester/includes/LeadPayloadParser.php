@@ -63,6 +63,13 @@ final class LeadPayloadParser
         'last_name'         => 'Last name',
         'email'             => 'What is your email address?',
         'phone'             => 'What is your phone number?',
+        // v1.0.23: Twilio number-validation status comes through as a Growform
+        // hidden/computed field. The label varies (the field id encodes a phone
+        // field id, e.g. phone_400747347981930_twilio_lookup_status). The flat
+        // parser handles it directly by querystring key prefix below; the
+        // label-based parser falls back to the value 'Validated'/'Not Validated'
+        // when present in the submission.
+        'twilio_lookup_status' => 'Twilio Lookup Status',
     ];
 
     public function parse(array $makePayload): array
@@ -190,6 +197,10 @@ final class LeadPayloadParser
             'last_name'         => $get(['lastName', 'last_name']),
             'email'             => $get(['email']),
             'phone'             => $get(['phone']),
+            // v1.0.23: Growform sends Twilio status as phone_<id>_twilio_lookup_status.
+            // Scan the flat keys for any key ending in _twilio_lookup_status (or just
+            // 'twilio_lookup_status' if the form was simplified).
+            'twilio_lookup_status' => $this->extractTwilioStatus($f),
         ];
 
         $out['state']   = \is_string($out['state'])
@@ -237,6 +248,28 @@ final class LeadPayloadParser
             if (($field['label'] ?? null) === $label) {
                 $value = $field['value'] ?? null;
                 return $value === null ? null : (string) $value;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * v1.0.23: Extract Twilio Lookup status from a flat Growform payload.
+     * The querystring key takes the form `phone_<id>_twilio_lookup_status`
+     * (e.g. `phone_400747347981930_twilio_lookup_status`). We scan keys
+     * looking for any that ends with `_twilio_lookup_status` or equals
+     * `twilio_lookup_status`. Common values: 'Validated', 'Not Validated'.
+     */
+    private function extractTwilioStatus(array $f): ?string
+    {
+        foreach ($f as $key => $value) {
+            if (!\is_string($key) || !\is_scalar($value)) {
+                continue;
+            }
+            if ($key === 'twilio_lookup_status'
+                || \str_ends_with($key, '_twilio_lookup_status')) {
+                $v = \trim((string) $value);
+                return $v === '' ? null : \substr($v, 0, 32);
             }
         }
         return null;

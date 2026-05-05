@@ -3,7 +3,7 @@ Contributors: vixi-agency
 Tags: a/b testing, split testing, lead generation
 Requires at least: 6.2
 Requires PHP: 8.1
-Stable tag: 1.0.22
+Stable tag: 1.0.23
 License: Proprietary
 
 Generic A/B/N split testing for caraccidenthelp.net. WordPress is the source of truth for leads; Make.com is forwarded server-side after the lead is persisted.
@@ -35,6 +35,24 @@ The plugin ships with a hand-rolled PSR-4 autoloader used as a fallback when no 
 from the plugin root. No runtime dependencies are required.
 
 == Changelog ==
+
+= 1.0.23 =
+* CONTROL = GROWFORM PARITY: cross-reference of growform.csv (1-4 May 2026, 327 leads)
+  vs DB Control (212 leads) found 120 missing leads. Root cause: 109 went to /finished/
+  (fixed in v1.0.22 PathBInjector) and ~6 lost to fetch race-condition on tab close.
+* assets/path-b.js: navigator.sendBeacon fallback registered on `pagehide` /
+  `beforeunload` so the lead POST survives tab closes / fast redirects.
+* includes/RestApi.php: backend dedupe via LeadsRepository::findRecentDuplicate()
+  to suppress the duplicate insert when fetch + beacon both arrive.
+* includes/Repositories/LeadsRepository.php: new findRecentDuplicate() (matches
+  email or phone within 5 min window). Allowlist updated for twilio_lookup_status.
+* includes/Activator.php: schema gains twilio_lookup_status VARCHAR(32).
+  dbDelta auto-migrates on activation.
+* includes/LeadPayloadParser.php: parses Growform's phone_<id>_twilio_lookup_status
+  hidden field into the new column. describe_accident already supported.
+* SQL migration v1023_backfill_sql.sql: backfills 114 missing 1-4 May Control
+  leads (108 /finished/ + 4 qualified + 2 diminished) and DELETEs test@gmail.com
+  rows from inz_cah_leads. Brings DB Control to 1:1 parity with Growform CSV.
 
 = 1.0.22 =
 * **REVERSAL of v1.0.19 + v1.0.21 — `service_type` IS a disqualifier.** Per the upstream Growform UI screenshots and direct confirmation from the client (Kaleb), only `car_accident`, `motorcycle_accident`, and `trucking_accident` can produce a `qualified` lead. Every other accident type (bicycle/e-bike, pedestrian, work, other) is automatically `disqualified` regardless of attorney/fault/injury/timeframe answers. v1.0.19 and v1.0.21 had removed this whitelist on the wrong assumption that service_type didn't matter; v1.0.22 restores the original v1.0.18 behaviour in all three places where the rule lived:

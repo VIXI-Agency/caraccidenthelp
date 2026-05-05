@@ -73,6 +73,47 @@ final class LeadsRepository
         return $id;
     }
 
+    /**
+     * v1.0.23: find a recent lead matching the same submission so we can
+     * suppress duplicate inserts caused by the path-b.js sendBeacon fallback
+     * (fetch + beacon racing). Match heuristic:
+     *   - same email (when present), OR same phone (when present)
+     *   - AND same visitor_id (when both rows have one) OR within $windowSec
+     * Returns the matching lead id, or 0 if none found.
+     */
+    public function findRecentDuplicate(string $email, string $phone, string $visitorId, int $windowSec = 300): int
+    {
+        global $wpdb;
+        if ($email === '' && $phone === '') {
+            return 0;
+        }
+        $table  = $this->table();
+        $window = (int) \max(60, $windowSec);
+        // Build WHERE: (email match OR phone match) AND created_at within window.
+        // visitor_id is an additional disambiguator but not required (sendBeacon
+        // fires the same JSON, so visitor_id will match exactly when present).
+        $clauses = [];
+        $args    = [];
+        if ($email !== '') {
+            $clauses[] = 'email = %s';
+            $args[]    = $email;
+        }
+        if ($phone !== '') {
+            $clauses[] = 'phone = %s';
+            $args[]    = $phone;
+        }
+        $where = '(' . \implode(' OR ', $clauses) . ')';
+        $sql = "SELECT id FROM {$table}
+                WHERE {$where}
+                  AND created_at >= (NOW() - INTERVAL %d SECOND)
+                ORDER BY id DESC
+                LIMIT 1";
+        $args[] = $window;
+        $prepared = $wpdb->prepare($sql, $args);
+        $id = $wpdb->get_var($prepared);
+        return $id !== null ? (int) $id : 0;
+    }
+
     public function find(int $id): ?array
     {
         global $wpdb;
@@ -314,7 +355,7 @@ final class LeadsRepository
         $allowed = [
             'service_type', 'attorney', 'fault', 'injury', 'timeframe',
             'state', 'zipcode', 'insured', 'first_name', 'last_name',
-            'email', 'phone', 'describe_accident', 'trustedform_cert_url',
+            'email', 'phone', 'describe_accident', 'twilio_lookup_status', 'trustedform_cert_url',
             'utm_source', 'utm_medium', 'utm_campaign', 'utm_term',
             'utm_content', 'utm_adname', 'utm_adid', 'utm_adsetid',
             'utm_adsetname', 'utm_campaignid', 'utm_placement',

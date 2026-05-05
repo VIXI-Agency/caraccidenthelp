@@ -107,6 +107,7 @@ final class Activator
             email VARCHAR(191) DEFAULT NULL,
             phone VARCHAR(32) DEFAULT NULL,
             describe_accident TEXT,
+            twilio_lookup_status VARCHAR(32) DEFAULT NULL,
             lead_stage VARCHAR(20) NOT NULL DEFAULT 'unknown',
             utm_source VARCHAR(191) DEFAULT NULL,
             utm_medium VARCHAR(191) DEFAULT NULL,

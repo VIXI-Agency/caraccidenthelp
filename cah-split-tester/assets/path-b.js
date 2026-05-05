@@ -82,15 +82,43 @@
                 trusted_form_cert: params.TrustedForm_certUrl || ''
             }
         };
+        var json = JSON.stringify(body);
+
+        // v1.0.23: sendBeacon as primary delivery on pagehide/unload events,
+        // fetch as primary on normal load. Beacon guarantees the POST survives
+        // tab closes / fast redirects (race condition that lost ~6 real leads
+        // 1-4 May 2026 according to Growform CSV cross-reference).
+        var beaconSent = false;
+        function sendViaBeacon() {
+            if (beaconSent) { return true; }
+            try {
+                if (navigator.sendBeacon) {
+                    var blob = new Blob([json], { type: 'application/json' });
+                    if (navigator.sendBeacon(REST + '/lead', blob)) {
+                        beaconSent = true;
+                        return true;
+                    }
+                }
+            } catch (e) {}
+            return false;
+        }
+        // Fire beacon if the page is being hidden/unloaded before fetch completes.
+        var onHide = function () { sendViaBeacon(); };
+        try {
+            window.addEventListener('pagehide', onHide, { once: true });
+            window.addEventListener('beforeunload', onHide, { once: true });
+        } catch (e) {}
 
         return fetch(REST + '/lead', {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             keepalive: true,
-            body: JSON.stringify(body)
+            body: json
         }).then(function (res) {
             if (!res || !res.ok) {
+                // HTTP error → try beacon as fallback before logging skip.
+                sendViaBeacon();
                 logSkip('fetch-failed', Object.assign({}, pageContext, {
                     test_id:     TEST_ID,
                     variant_id:  variantId,
@@ -99,6 +127,8 @@
                 }));
             }
         }).catch(function (err) {
+            // Network / abort → beacon fallback.
+            sendViaBeacon();
             logSkip('fetch-failed', Object.assign({}, pageContext, {
                 test_id:    TEST_ID,
                 variant_id: variantId,

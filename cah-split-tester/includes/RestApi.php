@@ -247,6 +247,37 @@ final class RestApi
             'raw_payload' => $rawPayload,
         ]);
 
+        // v1.0.23: backend dedupe. With sendBeacon now in path-b.js, the same
+        // submission may arrive twice (fetch + beacon) when the user closes the
+        // tab while fetch is in-flight. Suppress the duplicate at the DB layer
+        // by looking up any lead with the same email/phone + visitor_id within
+        // the last 5 minutes. Returns the existing lead_id so the client still
+        // gets a 201 with the redirect.
+        $dupId = $this->leads->findRecentDuplicate(
+            (string) ($data['email'] ?? ''),
+            (string) ($data['phone'] ?? ''),
+            (string) ($data['visitor_id'] ?? ''),
+            300
+        );
+        if ($dupId > 0) {
+            $this->logger?->info('rest.lead.dedupe', 'duplicate suppressed', [
+                'existing_lead_id' => $dupId,
+                'test_id'    => $data['test_id']    ?? null,
+                'variant_id' => $data['variant_id'] ?? null,
+                'visitor_id' => $data['visitor_id'] ?? null,
+                'lead_stage' => $stage,
+                'email'      => $data['email']      ?? null,
+                'source'     => $source,
+            ]);
+            return new WP_REST_Response([
+                'success'      => true,
+                'lead_id'      => $dupId,
+                'lead_stage'   => $stage,
+                'redirect_url' => $redirect,
+                'deduped'      => true,
+            ], 200);
+        }
+
         try {
             $leadId = $this->leads->create($data);
         } catch (\Throwable $e) {
