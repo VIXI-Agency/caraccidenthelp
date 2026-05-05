@@ -191,17 +191,18 @@ final class StatsRepository
         $toUtc   = $this->localStringToUtc($to);
 
         // "Comparable" leads = leads that do NOT trip an obvious disqualifier.
-        // The four real disqualifiers (per the actual business rules used by
-        // Growform AND HTML V1) are:
+        // Per the actual business rules used by Growform AND HTML V1
+        // (confirmed by the client — see v1.0.22 reversal notes), the five
+        // real disqualifiers are:
         //   - attorney = 'has_attorney'
         //   - fault    = 'yes'
         //   - injury   = 'no'
         //   - timeframe IN ('longer_than_2_year','within_2_year')
+        //   - service_type NOT IN ('car_accident','motorcycle_accident','trucking_accident')
         //
-        // service_type is NOT a disqualifier — every accident type
-        // (car, motorcycle, truck, bicycle, pedestrian, work, other, etc.)
-        // is potentially qualified. v1.0.18 incorrectly excluded leads with
-        // non-MVA service_type from the comparable cohort; v1.0.19 fixes that.
+        // v1.0.18 had this rule, v1.0.19 incorrectly removed it on the wrong
+        // assumption that service_type was not a disqualifier. v1.0.22
+        // restores it so Comparable QR matches the real qualifier definition.
         //
         // Rationale for Comparable QR: some upstream forms (e.g. Growform)
         // silently drop disqualifiers before they reach our DB, so an
@@ -212,6 +213,9 @@ final class StatsRepository
             OR l.fault = 'yes'
             OR l.injury = 'no'
             OR l.timeframe IN ('longer_than_2_year','within_2_year')
+            OR (l.service_type IS NOT NULL
+                AND l.service_type <> ''
+                AND l.service_type NOT IN ('car_accident','motorcycle_accident','trucking_accident'))
         )";
 
         $query = "

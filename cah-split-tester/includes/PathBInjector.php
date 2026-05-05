@@ -65,9 +65,14 @@ final class PathBInjector
      */
     private function targetPaths(): array
     {
+        // v1.0.22: include all three Growform redirect destinations so the
+        // observability snippet captures Path B leads regardless of which
+        // disqualified bucket Growform routed them to (no-injury →
+        // /diminished-value-claim/, everything else → /finished/).
         $urls = [
             LeadStage::URL_QUALIFIED,
-            LeadStage::URL_DISQUALIFIED,
+            LeadStage::URL_DISQUALIFIED_NO_INJURY,
+            LeadStage::URL_DISQUALIFIED_OTHER,
         ];
         $out = [];
         foreach ($urls as $url) {

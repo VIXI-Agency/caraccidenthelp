@@ -223,7 +223,9 @@ final class RestApi
         }
 
         $stage  = $this->leadStage->compute($fields);
-        $redirect = $this->leadStage->redirectUrl($stage);
+        // v1.0.22: pass $fields so the disqualified split (no-injury → /diminished-value-claim/,
+        // everything else → /finished/) mirrors Growform's official redirect waterfall.
+        $redirect = $this->leadStage->redirectUrl($stage, $fields);
 
         $rawPayload = \wp_json_encode($body);
 

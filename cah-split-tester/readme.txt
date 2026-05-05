@@ -3,7 +3,7 @@ Contributors: vixi-agency
 Tags: a/b testing, split testing, lead generation
 Requires at least: 6.2
 Requires PHP: 8.1
-Stable tag: 1.0.21
+Stable tag: 1.0.22
 License: Proprietary
 
 Generic A/B/N split testing for caraccidenthelp.net. WordPress is the source of truth for leads; Make.com is forwarded server-side after the lead is persisted.
@@ -35,6 +35,21 @@ The plugin ships with a hand-rolled PSR-4 autoloader used as a fallback when no 
 from the plugin root. No runtime dependencies are required.
 
 == Changelog ==
+
+= 1.0.22 =
+* **REVERSAL of v1.0.19 + v1.0.21 — `service_type` IS a disqualifier.** Per the upstream Growform UI screenshots and direct confirmation from the client (Kaleb), only `car_accident`, `motorcycle_accident`, and `trucking_accident` can produce a `qualified` lead. Every other accident type (bicycle/e-bike, pedestrian, work, other) is automatically `disqualified` regardless of attorney/fault/injury/timeframe answers. v1.0.19 and v1.0.21 had removed this whitelist on the wrong assumption that service_type didn't matter; v1.0.22 restores the original v1.0.18 behaviour in all three places where the rule lived:
+    * `variants/v1.html` — restored `QUALIFIED_SERVICES = ['car_accident','motorcycle_accident','trucking_accident']` filter on the HTML V1 client classifier.
+    * `includes/Repositories/StatsRepository.php::perVariant()` — restored the `service_type` rule inside `$disqExpr` so Comparable QR / Comparable Leads exclude non-MVA leads from the denominator (matches v1.0.18).
+    * `includes/LeadStage.php::compute()` — restored `QUALIFIED_SERVICES` whitelist as a required condition for `STAGE_QUALIFIED`. `service_type` is also required again for stage classification (a missing service_type yields `STAGE_UNKNOWN`).
+* **New `URL_DISQUALIFIED_OTHER` redirect (`/finished/`)** matching Growform's official 3-URL waterfall:
+    1. qualified → `/thank-you/?lead_stage=qualified-lead`
+    2. disqualified AND `injury='no'` → `/diminished-value-claim/?lead_stage=disqualified-lead`
+    3. disqualified (everything else, catch-all) → `/finished/?lead_stage=disqualified-lead`
+  `LeadStage::redirectUrl()` now accepts an optional `$fields` argument and routes accordingly. The legacy `URL_DISQUALIFIED` constant is preserved as an alias of `URL_DISQUALIFIED_NO_INJURY` for backwards compatibility.
+* **`PathBInjector` updated** to also auto-inject the Path B observability snippet on `/finished/` so leads dropped to the catch-all are still captured. After deploying v1.0.22, the same Path B snippet should be pasted into (or trusted to be auto-injected on) the `/finished/` WordPress page.
+* **`StatsRepository` & `test-detail.php` footnote** wording updated to mention non-MVA service type as a disqualifier again, matching the restored SQL.
+* **One-time SQL rollback (provided alongside this release)** reverts the 17 historical V1 leads incorrectly promoted to `qualified` by the v1.0.19 SQL recovery, using the existing `inz_cah_leads_v1019_backup` table.
+* **v1.0.20 admin UX (Q-columns + Form badges) is preserved** — those changes were pure UX with no logic dependency and remain useful.
 
 = 1.0.21 =
 * **CRITICAL: Fix server-side qualified logic in `LeadStage::compute()`** — the third and most impactful copy of the same `service_type` whitelist bug fixed in v1.0.19. The PHP backend was hardcoding `QUALIFIED_SERVICES = ['car_accident','motorcycle_accident','trucking_accident']` as a REQUIRED condition for `lead_stage = qualified`. Every lead with any other service_type (bicycle/e-bike, pedestrian, accident-or-injury-at-work, other) was silently overridden to `disqualified` at the server, regardless of attorney/fault/injury/timeframe answers. This affected **BOTH** Growform-fed Control AND HTML V1 — unlike the v1.0.19 JS fix which only affected HTML V1, this server fix corrects every variant. SQL audit of test_id=2 confirmed Growform was sending leads with `attorney="I Have An Attorney"` correctly, but the server was overriding many other accident types to disqualified before saving. Going forward, ALL accident types are treated equally; disqualification depends ONLY on attorney/fault/injury/timeframe.

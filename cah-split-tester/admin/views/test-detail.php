@@ -93,7 +93,7 @@ foreach ($series['leads'] as $row) {
                 <th><?php esc_html_e('CR', 'cah-split'); ?></th>
                 <th><?php esc_html_e('Qualified', 'cah-split'); ?></th>
                 <th><?php esc_html_e('Qualified CR', 'cah-split'); ?></th>
-                <th title="<?php esc_attr_e('Comparable leads = total leads minus obvious disqualifiers (has-attorney, at-fault, no-injury, timeframe within/longer than 2 years). Some upstream forms (e.g. Growform) drop these silently before they hit our DB — excluding them on our side too gives an apples-to-apples qualified rate across variants.', 'cah-split'); ?>"><?php esc_html_e('Comparable Leads', 'cah-split'); ?></th>
+                <th title="<?php esc_attr_e('Comparable leads = total leads minus obvious disqualifiers (has-attorney, at-fault, no-injury, timeframe within/longer than 2 years, non-MVA service type — anything other than car / motorcycle / trucking accident). Some upstream forms (e.g. Growform) drop these silently before they hit our DB — excluding them on our side too gives an apples-to-apples qualified rate across variants.', 'cah-split'); ?>"><?php esc_html_e('Comparable Leads', 'cah-split'); ?></th>
                 <th title="<?php esc_attr_e('Qualified ÷ Comparable leads. Use this to compare variants whose forms drop disqualified leads upstream (e.g. Growform) against forms that store every submission (e.g. our HTML variants).', 'cah-split'); ?>"><?php esc_html_e('Comparable QR', 'cah-split'); ?></th>
                 <th><?php esc_html_e('vs baseline', 'cah-split'); ?></th>
             </tr>
@@ -158,7 +158,7 @@ foreach ($series['leads'] as $row) {
         <br />
         <?php esc_html_e('CR uses pageviews as the denominator (industry standard for A/B tests). Unique = distinct cookie-based visitors; the multiplier in parentheses is pageviews÷unique — healthy traffic is typically 1.2–2x. A much higher ratio on a single variant may indicate refresh loops, bot traffic or a UX issue.', 'cah-split'); ?>
         <br />
-        <?php esc_html_e('Comparable Leads = total leads minus obvious disqualifiers (has-attorney, at-fault, no-injury, timeframe within/longer than 2 years). Comparable QR = qualified ÷ comparable leads. Use this when one variant\'s upstream form silently drops disqualified submissions (e.g. Growform) and another stores every submission (e.g. HTML variants) — it normalises the denominator so the qualified rate is apples-to-apples.', 'cah-split'); ?>
+        <?php esc_html_e('Comparable Leads = total leads minus obvious disqualifiers (has-attorney, at-fault, no-injury, timeframe within/longer than 2 years, non-MVA service type — anything other than car / motorcycle / trucking accident). Comparable QR = qualified ÷ comparable leads. Use this when one variant\'s upstream form silently drops disqualified submissions (e.g. Growform) and another stores every submission (e.g. HTML variants) — it normalises the denominator so the qualified rate is apples-to-apples.', 'cah-split'); ?>
     </p>
 
     <h2><?php esc_html_e('Daily trend', 'cah-split'); ?></h2>

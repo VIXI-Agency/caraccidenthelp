@@ -1005,25 +1005,34 @@ function gfSubmit() {
   }
 
   // ── Determine redirect URL ────────────────────────────────
-  // NOTE (v1.0.19): service_type does NOT disqualify — all accident types
-  // (car, motorcycle, truck, bicycle, pedestrian, work, other, etc.) are
-  // potentially qualified. Disqualification depends ONLY on the answers to
-  // attorney / fault / injury / timeframe. This matches the upstream Growform
-  // behaviour (see ticket: HTML V1 was under-counting qualified leads because
-  // it descalificaba auto a bicycle/pedestrian/work/other accidents).
+  // NOTE (v1.0.22 — REVERSAL of v1.0.19): service_type DOES disqualify per the
+  // upstream Growform rules confirmed by the client. Only Car / Motorcycle /
+  // Trucking accidents can qualify; every other accident type is automatically
+  // disqualified regardless of attorney/fault/injury/timeframe answers.
+  //
+  // Redirect waterfall mirrors Growform's official setup (per client-supplied
+  // screenshots):
+  //   1. qualified                     → /thank-you/
+  //   2. disqualified AND injury=No    → /diminished-value-claim/
+  //   3. disqualified (everything else)→ /finished/   (catch-all)
+  var QUALIFIED_SERVICES   = ['car_accident','motorcycle_accident','trucking_accident'];
   var QUALIFIED_TIMEFRAMES = ['within_1_week','within_1_3_months','within_4_6_months','within_1_year'];
   var isQualified = (
+    QUALIFIED_SERVICES.indexOf(gfd.serviceType) !== -1 &&
     gfd.fault       === 'no'      &&
     gfd.injury      === 'yes'     &&
     gfd.attorney    === 'not_yet' &&
     QUALIFIED_TIMEFRAMES.indexOf(gfd.accidentHappen) !== -1
   );
   var isDisqualified = !isQualified;
-  var redirectUrl = isQualified
-    ? 'https://caraccidenthelp.net/thank-you/?lead_stage=qualified-lead&from_cah_form=1'
-    : isDisqualified
-      ? 'https://caraccidenthelp.net/diminished-value-claim/?lead_stage=disqualified-lead&from_cah_form=1'
-      : null;
+  var redirectUrl;
+  if (isQualified) {
+    redirectUrl = 'https://caraccidenthelp.net/thank-you/?lead_stage=qualified-lead&from_cah_form=1';
+  } else if (gfd.injury === 'no') {
+    redirectUrl = 'https://caraccidenthelp.net/diminished-value-claim/?lead_stage=disqualified-lead&from_cah_form=1';
+  } else {
+    redirectUrl = 'https://caraccidenthelp.net/finished/?lead_stage=disqualified-lead&from_cah_form=1';
+  }
 
   // Persist lead data in localStorage so thank-you page GTM can read it
   try {

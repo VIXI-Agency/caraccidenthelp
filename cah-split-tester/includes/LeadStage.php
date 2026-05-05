@@ -14,8 +14,16 @@ final class LeadStage
     public const STAGE_DISQUALIFIED = 'disqualified';
     public const STAGE_UNKNOWN      = 'unknown';
 
-    public const URL_QUALIFIED    = 'https://caraccidenthelp.net/thank-you/?lead_stage=qualified-lead&from_cah_form=1';
-    public const URL_DISQUALIFIED = 'https://caraccidenthelp.net/diminished-value-claim/?lead_stage=disqualified-lead&from_cah_form=1';
+    public const URL_QUALIFIED              = 'https://caraccidenthelp.net/thank-you/?lead_stage=qualified-lead&from_cah_form=1';
+    public const URL_DISQUALIFIED_NO_INJURY = 'https://caraccidenthelp.net/diminished-value-claim/?lead_stage=disqualified-lead&from_cah_form=1';
+    public const URL_DISQUALIFIED_OTHER     = 'https://caraccidenthelp.net/finished/?lead_stage=disqualified-lead&from_cah_form=1';
+
+    /**
+     * Backwards-compat alias for code paths that still reference the old
+     * single-disqualified URL. Prefer URL_DISQUALIFIED_NO_INJURY /
+     * URL_DISQUALIFIED_OTHER plus redirectUrl() going forward.
+     */
+    public const URL_DISQUALIFIED           = self::URL_DISQUALIFIED_NO_INJURY;
 
     /**
      * Timeframes that DO NOT disqualify the lead. Anything outside this list
@@ -30,22 +38,27 @@ final class LeadStage
     ];
 
     /**
-     * NOTE (v1.0.21): service_type is NOT a disqualifier. Per business rules,
-     * EVERY accident type (car, motorcycle, truck, bicycle/e-bike, pedestrian,
-     * accident-or-injury-at-work, other accident) is potentially qualified.
-     * Disqualification depends ONLY on attorney/fault/injury/timeframe.
+     * Service types that CAN qualify per the upstream Growform rules confirmed
+     * by the client (Kaleb): only Car / Motorcycle / Trucking accidents are
+     * eligible. Every other service_type (bicycle, pedestrian, work, other,
+     * etc.) is automatically disqualified regardless of the answers to
+     * attorney/fault/injury/timeframe.
      *
-     * The previous implementation (v1.0.0 – v1.0.20) had a hardcoded
-     * QUALIFIED_SERVICES = [car, motorcycle, trucking] whitelist here that
-     * silently disqualified every other accident type at the server, for BOTH
-     * Growform-fed Control AND HTML V1. This was the same bug the JS in
-     * variants/v1.html had (fixed in v1.0.19), but the server-side variant
-     * was even more impactful because it affected every variant including
-     * Growform-fed ones, where the JS fix had no effect.
+     * NOTE (v1.0.22 — REVERSAL of v1.0.21): the v1.0.21 release removed this
+     * whitelist based on an earlier (wrong) understanding that service_type
+     * was not a disqualifier. The Growform UI screenshots and a direct
+     * statement from the client confirm the original behaviour was correct,
+     * so the whitelist is restored here.
      */
+    public const QUALIFIED_SERVICES = [
+        'car_accident',
+        'motorcycle_accident',
+        'trucking_accident',
+    ];
+
     public function compute(array $fields): string
     {
-        $required = ['attorney', 'fault', 'injury', 'timeframe'];
+        $required = ['service_type', 'attorney', 'fault', 'injury', 'timeframe'];
         foreach ($required as $key) {
             if (empty($fields[$key])) {
                 return self::STAGE_UNKNOWN;
@@ -53,21 +66,41 @@ final class LeadStage
         }
 
         $qualified = (
-            $fields['attorney'] === 'not_yet'
-            && $fields['fault']    === 'no'
-            && $fields['injury']   === 'yes'
+            \in_array($fields['service_type'], self::QUALIFIED_SERVICES, true)
+            && $fields['attorney']  === 'not_yet'
+            && $fields['fault']     === 'no'
+            && $fields['injury']    === 'yes'
             && \in_array($fields['timeframe'], self::QUALIFIED_TIMEFRAMES, true)
         );
 
         return $qualified ? self::STAGE_QUALIFIED : self::STAGE_DISQUALIFIED;
     }
 
-    public function redirectUrl(string $stage): ?string
+    /**
+     * Resolve the post-submit redirect URL.
+     *
+     * Mirrors Growform's official waterfall (per client-supplied screenshots):
+     *   1. qualified                     → /thank-you/
+     *   2. disqualified AND injury=No    → /diminished-value-claim/
+     *   3. disqualified (everything else)→ /finished/
+     *
+     * The optional $fields argument lets callers (RestApi) drive the
+     * disqualified split; without it the legacy single URL is returned for
+     * backwards compatibility.
+     */
+    public function redirectUrl(string $stage, array $fields = []): ?string
     {
-        return match ($stage) {
-            self::STAGE_QUALIFIED    => self::URL_QUALIFIED,
-            self::STAGE_DISQUALIFIED => self::URL_DISQUALIFIED,
-            default                  => null,
-        };
+        if ($stage === self::STAGE_QUALIFIED) {
+            return self::URL_QUALIFIED;
+        }
+
+        if ($stage === self::STAGE_DISQUALIFIED) {
+            $injury = $fields['injury'] ?? null;
+            return $injury === 'no'
+                ? self::URL_DISQUALIFIED_NO_INJURY
+                : self::URL_DISQUALIFIED_OTHER;
+        }
+
+        return null;
     }
 }
