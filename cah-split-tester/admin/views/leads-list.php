@@ -39,6 +39,38 @@ function cah_format_dt(?string $value): string
     }
     return esc_html(date_i18n('Y-m-d H:i', $ts));
 }
+
+/**
+ * Render a question-answer cell. Empty/NULL → "—" so it's visually obvious
+ * the form did not submit a value for that field. Highlights the disqualifier
+ * value in red so operators can spot the disqualification reason at a glance.
+ */
+function cah_render_qa(?string $value, array $disqualifiers = []): string
+{
+    if ($value === null || $value === '') {
+        return '<span class="cah-qa-empty" title="' . esc_attr__('Field not submitted by form (NULL or empty)', 'cah-split') . '">—</span>';
+    }
+    $isDisq = in_array($value, $disqualifiers, true);
+    $cls = $isDisq ? 'cah-qa cah-qa-disq' : 'cah-qa';
+    return '<span class="' . esc_attr($cls) . '">' . esc_html($value) . '</span>';
+}
+
+/**
+ * Map the internal source slug to a friendly form-type label.
+ */
+function cah_source_to_form_type(string $source): string
+{
+    if ($source === 'path_a_html_v1') {
+        return 'HTML';
+    }
+    if (strpos($source, 'path_b_') === 0) {
+        return 'Growform';
+    }
+    if ($source === '') {
+        return '—';
+    }
+    return $source;
+}
 ?>
 <div class="wrap cah-split-wrap">
     <h1 class="wp-heading-inline"><?php esc_html_e('Leads', 'cah-split'); ?></h1>
@@ -130,17 +162,22 @@ function cah_format_dt(?string $value): string
             <p><?php esc_html_e('No leads match the current filters.', 'cah-split'); ?></p>
         </div>
     <?php else : ?>
-        <table class="wp-list-table widefat fixed striped cah-leads-table">
+        <table class="wp-list-table widefat striped cah-leads-table">
             <thead>
                 <tr>
                     <th style="width:60px;"><?php esc_html_e('ID', 'cah-split'); ?></th>
                     <th><?php esc_html_e('Date', 'cah-split'); ?></th>
                     <th><?php esc_html_e('Name', 'cah-split'); ?></th>
                     <th><?php esc_html_e('Contact', 'cah-split'); ?></th>
+                    <th title="<?php esc_attr_e('Which form the lead came from. HTML = path_a_html_v1 (our HTML V1 form). Growform = any path_b_* source (Growform → /thank-you/ webhook).', 'cah-split'); ?>"><?php esc_html_e('Form', 'cah-split'); ?></th>
                     <th><?php esc_html_e('State', 'cah-split'); ?></th>
                     <th><?php esc_html_e('Service', 'cah-split'); ?></th>
+                    <th title="<?php esc_attr_e('Q: Do you have an attorney? Disqualifier: has_attorney', 'cah-split'); ?>"><?php esc_html_e('Attorney', 'cah-split'); ?></th>
+                    <th title="<?php esc_attr_e('Q: Were you at fault? Disqualifier: yes', 'cah-split'); ?>"><?php esc_html_e('Fault', 'cah-split'); ?></th>
+                    <th title="<?php esc_attr_e('Q: Were you injured? Disqualifier: no', 'cah-split'); ?>"><?php esc_html_e('Injury', 'cah-split'); ?></th>
+                    <th title="<?php esc_attr_e('Q: When did the accident happen? Disqualifiers: within_2_year, longer_than_2_year', 'cah-split'); ?>"><?php esc_html_e('Timeframe', 'cah-split'); ?></th>
                     <th><?php esc_html_e('Stage', 'cah-split'); ?></th>
-                    <th title="<?php esc_attr_e('Where the lead came from. path_a_html_v1 = HTML v1 form. path_b_growform = Growform → /thank-you/ with full attribution. path_b_no_cookie = visitor reached /thank-you/ directly without going through the split (no variant attribution). path_b_parse_failed_* = cookie was corrupt. path_b_missing_stage = cookie OK but ?lead_stage param missing.', 'cah-split'); ?>"><?php esc_html_e('Source', 'cah-split'); ?></th>
+                    <th title="<?php esc_attr_e('Internal source slug. path_a_html_v1 = HTML v1 form. path_b_growform = Growform → /thank-you/ with full attribution. path_b_no_cookie = visitor reached /thank-you/ directly without going through the split (no variant attribution). path_b_parse_failed_* = cookie was corrupt. path_b_missing_stage = cookie OK but ?lead_stage param missing.', 'cah-split'); ?>"><?php esc_html_e('Source', 'cah-split'); ?></th>
                     <th><?php esc_html_e('UTM source', 'cah-split'); ?></th>
                     <th><?php esc_html_e('Make', 'cah-split'); ?></th>
                     <th></th>
@@ -149,6 +186,7 @@ function cah_format_dt(?string $value): string
             <tbody>
                 <?php foreach ($leads as $lead) :
                     $sourceVal = (string) ($lead['source'] ?? '');
+                    $formType  = cah_source_to_form_type($sourceVal);
                     ?>
                     <tr>
                         <td><code>#<?php echo esc_html((string) ($lead['id'] ?? '')); ?></code></td>
@@ -158,8 +196,13 @@ function cah_format_dt(?string $value): string
                             <div><?php echo esc_html((string) ($lead['email'] ?? '')); ?></div>
                             <div class="description"><?php echo esc_html((string) ($lead['phone'] ?? '')); ?></div>
                         </td>
+                        <td><span class="cah-form cah-form-<?php echo esc_attr(strtolower($formType)); ?>"><?php echo esc_html($formType); ?></span></td>
                         <td><?php echo esc_html((string) ($lead['state'] ?? '')); ?></td>
                         <td><?php echo esc_html((string) ($lead['service_type'] ?? '')); ?></td>
+                        <td><?php echo cah_render_qa((string) ($lead['attorney']  ?? ''), ['has_attorney']); ?></td>
+                        <td><?php echo cah_render_qa((string) ($lead['fault']     ?? ''), ['yes']); ?></td>
+                        <td><?php echo cah_render_qa((string) ($lead['injury']    ?? ''), ['no']); ?></td>
+                        <td><?php echo cah_render_qa((string) ($lead['timeframe'] ?? ''), ['within_2_year', 'longer_than_2_year']); ?></td>
                         <td><span class="cah-status cah-status-<?php echo esc_attr((string) ($lead['lead_stage'] ?? 'unknown')); ?>"><?php echo esc_html((string) ($lead['lead_stage'] ?? 'unknown')); ?></span></td>
                         <td>
                             <?php if ($sourceVal !== '') : ?>
@@ -173,7 +216,7 @@ function cah_format_dt(?string $value): string
                         <td><button type="button" class="button-link cah-expand" data-lead="<?php echo esc_attr((string) $lead['id']); ?>"><?php esc_html_e('Details', 'cah-split'); ?></button></td>
                     </tr>
                     <tr class="cah-lead-detail" id="cah-lead-detail-<?php echo esc_attr((string) $lead['id']); ?>" hidden>
-                        <td colspan="11">
+                        <td colspan="16">
                             <pre><?php echo esc_html(
                                 wp_json_encode(
                                     json_decode((string) ($lead['raw_payload'] ?? 'null'), true),

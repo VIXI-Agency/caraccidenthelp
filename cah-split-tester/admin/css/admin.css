@@ -205,6 +205,41 @@
 .cah-source-unknown                        { background: #e2e3e5; color: #383d41; }
 .cah-source-empty                          { background: transparent; color: #999; }
 
+/* v1.0.20 — Question/answer cells in Leads list */
+.cah-qa {
+    font-family: Consolas, Monaco, monospace;
+    font-size: 11px;
+    color: #1d2327;
+    word-break: break-word;
+}
+.cah-qa-disq {
+    background: #f8d7da;
+    color: #842029;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+.cah-qa-empty {
+    color: #c0c4c8;
+    font-style: italic;
+    font-size: 13px;
+}
+
+/* v1.0.20 — Form-type badges (HTML / Growform) in Leads list */
+.cah-form {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+.cah-form-html     { background: #d1e7dd; color: #0f5132; }
+.cah-form-growform { background: #cfe2ff; color: #084298; }
+.cah-form---       { background: transparent; color: #999; font-weight: normal; }
+
 .cah-sig {
     display: inline-block;
     padding: 2px 6px;

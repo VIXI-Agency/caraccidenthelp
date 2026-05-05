@@ -3,7 +3,7 @@ Contributors: vixi-agency
 Tags: a/b testing, split testing, lead generation
 Requires at least: 6.2
 Requires PHP: 8.1
-Stable tag: 1.0.19
+Stable tag: 1.0.20
 License: Proprietary
 
 Generic A/B/N split testing for caraccidenthelp.net. WordPress is the source of truth for leads; Make.com is forwarded server-side after the lead is persisted.
@@ -35,6 +35,12 @@ The plugin ships with a hand-rolled PSR-4 autoloader used as a fallback when no 
 from the plugin root. No runtime dependencies are required.
 
 == Changelog ==
+
+= 1.0.20 =
+* **Leads page — new question columns** (`admin/views/leads-list.php`): added `Attorney`, `Fault`, `Injury`, `Timeframe` columns so operators can audit each lead's qualification at a glance without expanding the raw payload. Disqualifying answers (`has_attorney`, `fault=yes`, `injury=no`, `timeframe IN (within_2_year, longer_than_2_year)`) are highlighted in red so the disqualification reason is visually obvious. Empty/NULL values render as a faint em-dash so it's clear when a form did not submit a value for that field (key for diagnosing Growform vs HTML mapping mismatches).
+* **Leads page — new "Form" column** with friendly badges: `HTML` (green) for `path_a_html_v1`, `Growform` (blue) for any `path_b_*` source. The internal `Source` slug column is preserved for deep debugging but the new `Form` column makes day-to-day filtering much clearer.
+* **Per-variant table footnote fix** (`admin/views/test-detail.php`): removed the stale “non-MVA service” clause from the Comparable Leads tooltip and footnote text, to match the v1.0.19 logic change where `service_type` is no longer a disqualifier. The on-screen text now matches what the SQL actually does.
+* **Zero schema changes, zero behaviour changes on lead capture or forwarding.** Pure admin UX additions — the new columns read from existing fields already populated by `RestApi::record()`.
 
 = 1.0.19 =
 * **Fix qualified logic in HTML V1 form (`variants/v1.html`)** — removed the hardcoded `QUALIFIED_SERVICES` whitelist that was auto-disqualifying any lead whose `service_type` wasn't `car_accident`, `motorcycle_accident`, or `trucking_accident`. Per business rules, **`service_type` does NOT disqualify** — every accident type (car, motorcycle, truck, bicycle/e-bike, pedestrian, accident-or-injury-at-work, other) is potentially qualified. Disqualification depends ONLY on attorney/fault/injury/timeframe. This bug caused HTML V1 to under-count qualified leads — SQL audit confirmed ~12 leads were silently lost to this in 4 days of test_id=2 alone, and the gap is even larger in production because the bug had been live since v1.0.0.
