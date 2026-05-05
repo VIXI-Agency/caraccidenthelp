@@ -3,7 +3,7 @@ Contributors: vixi-agency
 Tags: a/b testing, split testing, lead generation
 Requires at least: 6.2
 Requires PHP: 8.1
-Stable tag: 1.0.17
+Stable tag: 1.0.18
 License: Proprietary
 
 Generic A/B/N split testing for caraccidenthelp.net. WordPress is the source of truth for leads; Make.com is forwarded server-side after the lead is persisted.
@@ -35,6 +35,13 @@ The plugin ships with a hand-rolled PSR-4 autoloader used as a fallback when no 
 from the plugin root. No runtime dependencies are required.
 
 == Changelog ==
+
+= 1.0.18 =
+* **New "Comparable QR" metric on the per-variant table** — apples-to-apples qualified-rate that excludes obvious disqualifications (has_attorney, fault=yes, injury=no, timeframe within/longer than 2 years, non-MVA service_type) from the denominator. This is the fair number to compare HTML v1 against Growform-fed variants, because Growform silently filters disqualified users client-side BEFORE they hit the DB (they get redirected to `/finished/?lead_stage=disqualified-lead&...` and `/thank-you/` is never loaded, so no row is ever inserted). HTML v1, in contrast, persists EVERY submission — qualified and disqualified alike. Comparing raw QR between the two is misleading; Comparable QR levels the playing field by removing leads that Growform would have dropped upstream.
+* **New "Comparable Leads" column** — total leads minus obvious disqualifications, with a `(−N)` indicator showing how many were excluded. Lets operators see the size of the comparable cohort at a glance.
+* **`StatsRepository::perVariant()`** now computes `comparable_leads` and `disqualified_obvious` per variant inside the existing aggregation subquery — single round-trip, no N+1, fully retroactive across all historical leads.
+* **Explanation paragraph** at the bottom of the per-variant table documents the disqualification criteria and explains why Comparable QR exists, so future operators don't have to dig through code to understand the metric.
+* **Zero impact on data, forms, Make.com, or anything else** — display-only addition. No schema changes, no migrations, no behavior changes on lead capture or forwarding. Existing "Total Leads" and "Qualified %" columns are unchanged.
 
 = 1.0.17 =
 * **Capture-everything: every form submission becomes a row in `wp_cah_leads`, no exceptions.** Visitors who reach `/thank-you/` directly without going through the split test (no `cah_variant_2` cookie) used to fire `rest.lead_skip.no-cookie` and be lost from the dashboard. Now they create a real lead row tagged `source='path_b_no_cookie'`, with NULL `variant_id`. Same for cookie-corruption cases (`path_b_parse_failed_no_dot`, `path_b_parse_failed_no_ids`) and for visitors whose Growform redirect was missing `?lead_stage=` (`path_b_missing_stage`, lead_stage='unknown'). Total `wp_cah_leads` row count for a day should now match Hyros total for the same window. The dashboard CR will look LOWER than before because the unattributed leads inflate the lead count without inflating pageviews — that's the correct behavior; the previous numbers were under-counting.

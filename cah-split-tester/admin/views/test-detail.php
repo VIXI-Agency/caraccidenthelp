@@ -93,6 +93,8 @@ foreach ($series['leads'] as $row) {
                 <th><?php esc_html_e('CR', 'cah-split'); ?></th>
                 <th><?php esc_html_e('Qualified', 'cah-split'); ?></th>
                 <th><?php esc_html_e('Qualified CR', 'cah-split'); ?></th>
+                <th title="<?php esc_attr_e('Comparable leads = total leads minus obvious disqualifiers (has-attorney, at-fault, no-injury, >2yr, non-MVA service). Some upstream forms (e.g. Growform) drop these silently before they hit our DB — excluding them on our side too gives an apples-to-apples qualified rate across variants.', 'cah-split'); ?>"><?php esc_html_e('Comparable Leads', 'cah-split'); ?></th>
+                <th title="<?php esc_attr_e('Qualified ÷ Comparable leads. Use this to compare variants whose forms drop disqualified leads upstream (e.g. Growform) against forms that store every submission (e.g. our HTML variants).', 'cah-split'); ?>"><?php esc_html_e('Comparable QR', 'cah-split'); ?></th>
                 <th><?php esc_html_e('vs baseline', 'cah-split'); ?></th>
             </tr>
         </thead>
@@ -101,10 +103,13 @@ foreach ($series['leads'] as $row) {
                 $pv    = (int) $vs['pageviews'];
                 $uniq  = (int) ($vs['unique_visitors'] ?? 0);
                 $ratio = $uniq > 0 ? ($pv / $uniq) : 0.0;
-                $lds = (int) $vs['leads'];
-                $ql  = (int) $vs['qualified_leads'];
-                $cr  = $pv > 0 ? ($lds / $pv) * 100 : 0.0;
-                $qcr = $pv > 0 ? ($ql / $pv) * 100 : 0.0;
+                $lds  = (int) $vs['leads'];
+                $ql   = (int) $vs['qualified_leads'];
+                $cmp  = (int) ($vs['comparable_leads'] ?? 0);
+                $disq = (int) ($vs['disqualified_obvious'] ?? 0);
+                $cr   = $pv > 0 ? ($lds / $pv) * 100 : 0.0;
+                $qcr  = $pv > 0 ? ($ql / $pv) * 100 : 0.0;
+                $cqr  = $cmp > 0 ? ($ql / $cmp) * 100 : 0.0;
 
                 $sigText = '—';
                 $sigClass = '';
@@ -136,6 +141,13 @@ foreach ($series['leads'] as $row) {
                     <td><?php echo esc_html(number_format_i18n($cr, 2)); ?>%</td>
                     <td><?php echo esc_html(number_format_i18n($ql)); ?></td>
                     <td><?php echo esc_html(number_format_i18n($qcr, 2)); ?>%</td>
+                    <td>
+                        <?php echo esc_html(number_format_i18n($cmp)); ?>
+                        <?php if ($disq > 0) : ?>
+                            <small style="color:#646970;" title="<?php esc_attr_e('Obvious disqualifiers excluded from this denominator', 'cah-split'); ?>">(−<?php echo esc_html(number_format_i18n($disq)); ?>)</small>
+                        <?php endif; ?>
+                    </td>
+                    <td><?php echo esc_html(number_format_i18n($cqr, 2)); ?>%</td>
                     <td><span class="cah-sig <?php echo esc_attr($sigClass); ?>"><?php echo esc_html($sigText); ?></span></td>
                 </tr>
             <?php endforeach; ?>
@@ -145,6 +157,8 @@ foreach ($series['leads'] as $row) {
         <?php esc_html_e('Significance is a two-proportion z-test comparing each variant\'s CR to the first variant as baseline. * p<0.05, *** p<0.01. Informational only — no action is taken automatically.', 'cah-split'); ?>
         <br />
         <?php esc_html_e('CR uses pageviews as the denominator (industry standard for A/B tests). Unique = distinct cookie-based visitors; the multiplier in parentheses is pageviews÷unique — healthy traffic is typically 1.2–2x. A much higher ratio on a single variant may indicate refresh loops, bot traffic or a UX issue.', 'cah-split'); ?>
+        <br />
+        <?php esc_html_e('Comparable Leads = total leads minus obvious disqualifiers (has-attorney, at-fault, no-injury, >2yr, non-MVA service). Comparable QR = qualified ÷ comparable leads. Use this when one variant\'s upstream form silently drops disqualified submissions (e.g. Growform) and another stores every submission (e.g. HTML variants) — it normalises the denominator so the qualified rate is apples-to-apples.', 'cah-split'); ?>
     </p>
 
     <h2><?php esc_html_e('Daily trend', 'cah-split'); ?></h2>

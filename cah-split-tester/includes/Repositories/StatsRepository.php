@@ -190,6 +190,25 @@ final class StatsRepository
         $fromUtc = $this->localStringToUtc($from);
         $toUtc   = $this->localStringToUtc($to);
 
+        // "Comparable" leads = leads that do NOT trip an obvious disqualifier
+        // (has_attorney, fault=yes, injury=no, timeframe>2yr, non-MVA service).
+        // Rationale: some upstream forms (e.g. Growform) silently drop these
+        // before they reach our DB, so an apples-to-apples qualified rate
+        // requires us to ALSO exclude them from the denominator on our side.
+        // This does NOT delete or hide rows — it only adjusts the metric.
+        $disqExpr = "(
+            l.attorney = 'has_attorney'
+            OR l.fault = 'yes'
+            OR l.injury = 'no'
+            OR l.timeframe IN ('longer_than_2_year','within_2_year')
+            OR (l.service_type IS NOT NULL AND l.service_type <> ''
+                AND l.service_type NOT IN (
+                    'car_accident','truck_accident','trucking_accident',
+                    'motorcycle_accident','rideshare_accident',
+                    'pedestrian_accident','bicycle_accident'
+                ))
+        )";
+
         $query = "
             SELECT
                 v.id AS variant_id,
@@ -199,7 +218,9 @@ final class StatsRepository
                 COALESCE(pv.total, 0) AS pageviews,
                 COALESCE(pv.unique_visitors, 0) AS unique_visitors,
                 COALESCE(ld.total, 0) AS leads,
-                COALESCE(ld.qualified, 0) AS qualified_leads
+                COALESCE(ld.qualified, 0) AS qualified_leads,
+                COALESCE(ld.comparable_leads, 0) AS comparable_leads,
+                COALESCE(ld.disqualified_obvious, 0) AS disqualified_obvious
             FROM {$vt} v
             LEFT JOIN (
                 SELECT variant_id,
@@ -210,11 +231,14 @@ final class StatsRepository
                 GROUP BY variant_id
             ) pv ON pv.variant_id = v.id
             LEFT JOIN (
-                SELECT variant_id, COUNT(*) AS total,
-                    SUM(CASE WHEN lead_stage = 'qualified' THEN 1 ELSE 0 END) AS qualified
-                FROM {$ld}
-                WHERE test_id = %d AND created_at BETWEEN %s AND %s
-                GROUP BY variant_id
+                SELECT l.variant_id,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN l.lead_stage = 'qualified' THEN 1 ELSE 0 END) AS qualified,
+                    SUM(CASE WHEN {$disqExpr} THEN 0 ELSE 1 END) AS comparable_leads,
+                    SUM(CASE WHEN {$disqExpr} THEN 1 ELSE 0 END) AS disqualified_obvious
+                FROM {$ld} l
+                WHERE l.test_id = %d AND l.created_at BETWEEN %s AND %s
+                GROUP BY l.variant_id
             ) ld ON ld.variant_id = v.id
             WHERE v.test_id = %d
             ORDER BY v.sort_order ASC, v.id ASC
