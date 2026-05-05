@@ -1005,13 +1005,17 @@ function gfSubmit() {
   }
 
   // ── Determine redirect URL ────────────────────────────────
-  var QUALIFIED_SERVICES = ['car_accident','motorcycle_accident','trucking_accident'];
+  // NOTE (v1.0.19): service_type does NOT disqualify — all accident types
+  // (car, motorcycle, truck, bicycle, pedestrian, work, other, etc.) are
+  // potentially qualified. Disqualification depends ONLY on the answers to
+  // attorney / fault / injury / timeframe. This matches the upstream Growform
+  // behaviour (see ticket: HTML V1 was under-counting qualified leads because
+  // it descalificaba auto a bicycle/pedestrian/work/other accidents).
   var QUALIFIED_TIMEFRAMES = ['within_1_week','within_1_3_months','within_4_6_months','within_1_year'];
   var isQualified = (
-    gfd.fault       === 'no'    &&
-    gfd.injury      === 'yes'   &&
+    gfd.fault       === 'no'      &&
+    gfd.injury      === 'yes'     &&
     gfd.attorney    === 'not_yet' &&
-    QUALIFIED_SERVICES.indexOf(gfd.serviceType)     !== -1 &&
     QUALIFIED_TIMEFRAMES.indexOf(gfd.accidentHappen) !== -1
   );
   var isDisqualified = !isQualified;

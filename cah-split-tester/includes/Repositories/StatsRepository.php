@@ -190,23 +190,28 @@ final class StatsRepository
         $fromUtc = $this->localStringToUtc($from);
         $toUtc   = $this->localStringToUtc($to);
 
-        // "Comparable" leads = leads that do NOT trip an obvious disqualifier
-        // (has_attorney, fault=yes, injury=no, timeframe>2yr, non-MVA service).
-        // Rationale: some upstream forms (e.g. Growform) silently drop these
-        // before they reach our DB, so an apples-to-apples qualified rate
-        // requires us to ALSO exclude them from the denominator on our side.
-        // This does NOT delete or hide rows — it only adjusts the metric.
+        // "Comparable" leads = leads that do NOT trip an obvious disqualifier.
+        // The four real disqualifiers (per the actual business rules used by
+        // Growform AND HTML V1) are:
+        //   - attorney = 'has_attorney'
+        //   - fault    = 'yes'
+        //   - injury   = 'no'
+        //   - timeframe IN ('longer_than_2_year','within_2_year')
+        //
+        // service_type is NOT a disqualifier — every accident type
+        // (car, motorcycle, truck, bicycle, pedestrian, work, other, etc.)
+        // is potentially qualified. v1.0.18 incorrectly excluded leads with
+        // non-MVA service_type from the comparable cohort; v1.0.19 fixes that.
+        //
+        // Rationale for Comparable QR: some upstream forms (e.g. Growform)
+        // silently drop disqualifiers before they reach our DB, so an
+        // apples-to-apples qualified rate requires us to ALSO exclude them
+        // from the denominator on our side. This does NOT delete or hide rows.
         $disqExpr = "(
             l.attorney = 'has_attorney'
             OR l.fault = 'yes'
             OR l.injury = 'no'
             OR l.timeframe IN ('longer_than_2_year','within_2_year')
-            OR (l.service_type IS NOT NULL AND l.service_type <> ''
-                AND l.service_type NOT IN (
-                    'car_accident','truck_accident','trucking_accident',
-                    'motorcycle_accident','rideshare_accident',
-                    'pedestrian_accident','bicycle_accident'
-                ))
         )";
 
         $query = "

@@ -3,7 +3,7 @@ Contributors: vixi-agency
 Tags: a/b testing, split testing, lead generation
 Requires at least: 6.2
 Requires PHP: 8.1
-Stable tag: 1.0.18
+Stable tag: 1.0.19
 License: Proprietary
 
 Generic A/B/N split testing for caraccidenthelp.net. WordPress is the source of truth for leads; Make.com is forwarded server-side after the lead is persisted.
@@ -35,6 +35,11 @@ The plugin ships with a hand-rolled PSR-4 autoloader used as a fallback when no 
 from the plugin root. No runtime dependencies are required.
 
 == Changelog ==
+
+= 1.0.19 =
+* **Fix qualified logic in HTML V1 form (`variants/v1.html`)** — removed the hardcoded `QUALIFIED_SERVICES` whitelist that was auto-disqualifying any lead whose `service_type` wasn't `car_accident`, `motorcycle_accident`, or `trucking_accident`. Per business rules, **`service_type` does NOT disqualify** — every accident type (car, motorcycle, truck, bicycle/e-bike, pedestrian, accident-or-injury-at-work, other) is potentially qualified. Disqualification depends ONLY on attorney/fault/injury/timeframe. This bug caused HTML V1 to under-count qualified leads — SQL audit confirmed ~12 leads were silently lost to this in 4 days of test_id=2 alone, and the gap is even larger in production because the bug had been live since v1.0.0.
+* **Fix Comparable QR metric in `StatsRepository::perVariant()`** — v1.0.18 incorrectly excluded leads with non-MVA `service_type` from the comparable cohort. Removed the `service_type` rule from `$disqExpr` so the metric now uses the same 4 real disqualifiers used in production: `attorney='has_attorney'`, `fault='yes'`, `injury='no'`, `timeframe IN ('within_2_year','longer_than_2_year')`. Retroactive across all historical data — Comparable QR and Comparable Leads will recalculate immediately on next dashboard load.
+* **Zero impact on data, schema, Make.com forwarding, or admin UX** — only changes JS classification logic going forward (HTML V1 will now persist + qualify previously-blocked accident types) and recalculates Comparable QR display. Existing leads in DB are unchanged.
 
 = 1.0.18 =
 * **New "Comparable QR" metric on the per-variant table** — apples-to-apples qualified-rate that excludes obvious disqualifications (has_attorney, fault=yes, injury=no, timeframe within/longer than 2 years, non-MVA service_type) from the denominator. This is the fair number to compare HTML v1 against Growform-fed variants, because Growform silently filters disqualified users client-side BEFORE they hit the DB (they get redirected to `/finished/?lead_stage=disqualified-lead&...` and `/thank-you/` is never loaded, so no row is ever inserted). HTML v1, in contrast, persists EVERY submission — qualified and disqualified alike. Comparing raw QR between the two is misleading; Comparable QR levels the playing field by removing leads that Growform would have dropped upstream.
