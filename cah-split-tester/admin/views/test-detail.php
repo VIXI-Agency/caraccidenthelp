@@ -14,6 +14,7 @@ use VIXI\CahSplit\Admin\Admin;
 /** @var \VIXI\CahSplit\Stats\Significance $significance */
 /** @var string $from */
 /** @var string $to */
+/** @var \DateTimeZone $dashboardTz */
 
 $baseline = $variantStats[0] ?? null;
 
@@ -24,32 +25,50 @@ foreach ($variantStats as $vs) {
     $variantLookup[(int) $vs['variant_id']] = (string) $vs['name'];
 }
 
-$start = new DateTimeImmutable($from);
-$end   = new DateTimeImmutable($to);
+$start = DateTimeImmutable::createFromFormat('!Y-m-d', substr($from, 0, 10), $dashboardTz);
+$end   = DateTimeImmutable::createFromFormat('!Y-m-d', substr($to, 0, 10), $dashboardTz);
 $days  = [];
-$cursor = $start;
-while ($cursor <= $end) {
-    $days[] = $cursor->format('Y-m-d');
-    $cursor = $cursor->modify('+1 day');
+if ($start instanceof DateTimeImmutable && $end instanceof DateTimeImmutable) {
+    $cursor = $start;
+    while ($cursor <= $end) {
+        $days[] = $cursor->format('Y-m-d');
+        $cursor = $cursor->modify('+1 day');
+    }
 }
 
-$chartData = ['labels' => $days, 'pageviews' => [], 'leads' => []];
+$qualifiedSeries = isset($series['qualified']) && is_array($series['qualified'])
+    ? $series['qualified']
+    : [];
+
+$chartData = ['labels' => $days, 'pageviews' => [], 'leads' => [], 'qualified' => []];
 foreach ($variantStats as $vs) {
-    $chartData['pageviews'][(string) $vs['name']] = array_fill(0, count($days), 0);
-    $chartData['leads'][(string) $vs['name']]     = array_fill(0, count($days), 0);
+    $name = (string) $vs['name'];
+    $chartData['pageviews'][$name]  = array_fill(0, count($days), 0);
+    $chartData['leads'][$name]      = array_fill(0, count($days), 0);
+    $chartData['qualified'][$name] = array_fill(0, count($days), 0);
 }
 foreach ($series['pageviews'] as $row) {
     $name = $variantLookup[(int) $row['variant_id']] ?? 'Variant #' . (int) $row['variant_id'];
-    $idx  = array_search((string) $row['day'], $days, true);
+    $dayKey = substr((string) $row['day'], 0, 10);
+    $idx  = array_search($dayKey, $days, true);
     if ($idx !== false && isset($chartData['pageviews'][$name])) {
         $chartData['pageviews'][$name][$idx] = (int) $row['total'];
     }
 }
 foreach ($series['leads'] as $row) {
     $name = $variantLookup[(int) $row['variant_id']] ?? 'Variant #' . (int) $row['variant_id'];
-    $idx  = array_search((string) $row['day'], $days, true);
+    $dayKey = substr((string) $row['day'], 0, 10);
+    $idx  = array_search($dayKey, $days, true);
     if ($idx !== false && isset($chartData['leads'][$name])) {
         $chartData['leads'][$name][$idx] = (int) $row['total'];
+    }
+}
+foreach ($qualifiedSeries as $row) {
+    $name = $variantLookup[(int) $row['variant_id']] ?? 'Variant #' . (int) $row['variant_id'];
+    $dayKey = substr((string) $row['day'], 0, 10);
+    $idx  = array_search($dayKey, $days, true);
+    if ($idx !== false && isset($chartData['qualified'][$name])) {
+        $chartData['qualified'][$name][$idx] = (int) $row['total'];
     }
 }
 ?>
@@ -162,6 +181,9 @@ foreach ($series['leads'] as $row) {
     </p>
 
     <h2><?php esc_html_e('Daily trend', 'cah-split'); ?></h2>
+    <p class="description">
+        <?php esc_html_e('Per variant (legend): solid area = daily pageviews (left axis). Dashed lines = all leads captured that day (right axis). Dotted lines = leads with server lead_stage qualified (same right axis).', 'cah-split'); ?>
+    </p>
     <div class="cah-chart-wrap">
         <canvas id="cah-daily-chart" height="120"></canvas>
     </div>
@@ -239,46 +261,85 @@ foreach ($series['leads'] as $row) {
 <script>
 (function () {
     var data = <?php echo wp_json_encode($chartData); ?>;
-    if (!window.Chart || !data || !data.labels || !data.labels.length) { return; }
 
-    var palette = ['#2271b1', '#d63638', '#00a32a', '#dba617', '#8c8f94', '#2c5aa0', '#7e57c2'];
-    var datasets = [];
-    var idx = 0;
-    Object.keys(data.pageviews).forEach(function (variant) {
-        var color = palette[idx % palette.length];
-        datasets.push({
-            label: variant + ' — pageviews',
-            data: data.pageviews[variant],
-            borderColor: color,
-            backgroundColor: color + '22',
-            tension: 0.2,
-            yAxisID: 'y'
-        });
-        datasets.push({
-            label: variant + ' — leads',
-            data: data.leads[variant] || [],
-            borderColor: color,
-            borderDash: [5, 3],
-            tension: 0.2,
-            yAxisID: 'y1'
-        });
-        idx++;
-    });
-
-    var ctx = document.getElementById('cah-daily-chart');
-    if (!ctx) { return; }
-    new Chart(ctx, {
-        type: 'line',
-        data: { labels: data.labels, datasets: datasets },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            scales: {
-                y:  { position: 'left',  title: { display: true, text: 'Pageviews' } },
-                y1: { position: 'right', title: { display: true, text: 'Leads' }, grid: { drawOnChartArea: false } }
+    function mountChart() {
+        var wrap = document.querySelector('.cah-chart-wrap');
+        if (!data || !data.labels || !data.labels.length) {
+            if (wrap) {
+                wrap.innerHTML = '<p class="description">' + <?php echo wp_json_encode(__('No days in this date range — check From / To.', 'cah-split')); ?> + '</p>';
             }
+            return;
         }
-    });
+        if (!window.Chart) {
+            if (wrap) {
+                wrap.innerHTML = '<p class="description">' + <?php echo wp_json_encode(__('Chart library did not load. Check network / CDN blocking.', 'cah-split')); ?> + '</p>';
+            }
+            return;
+        }
+
+        var palette = ['#2271b1', '#d63638', '#00a32a', '#dba617', '#8c8f94', '#2c5aa0', '#7e57c2'];
+        var datasets = [];
+        var idx = 0;
+        Object.keys(data.pageviews).forEach(function (variant) {
+            var color = palette[idx % palette.length];
+            datasets.push({
+                label: variant + ' — pageviews',
+                data: data.pageviews[variant],
+                borderColor: color,
+                backgroundColor: color + '22',
+                tension: 0.2,
+                yAxisID: 'y'
+            });
+            datasets.push({
+                label: variant + ' — leads',
+                data: data.leads[variant] || [],
+                borderColor: color,
+                borderDash: [5, 3],
+                tension: 0.2,
+                yAxisID: 'y1',
+                spanGaps: true
+            });
+            datasets.push({
+                label: variant + ' — qualified',
+                data: (data.qualified && data.qualified[variant]) ? data.qualified[variant] : [],
+                borderColor: color,
+                borderDash: [1, 3],
+                borderWidth: 2,
+                pointStyle: 'triangle',
+                pointRadius: 3,
+                fill: false,
+                tension: 0.2,
+                yAxisID: 'y1',
+                spanGaps: true
+            });
+            idx++;
+        });
+
+        var ctx = document.getElementById('cah-daily-chart');
+        if (!ctx) { return; }
+        new Chart(ctx, {
+            type: 'line',
+            data: { labels: data.labels, datasets: datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    y:  { position: 'left',  title: { display: true, text: 'Pageviews' } },
+                    y1: {
+                        position: 'right',
+                        title: { display: true, text: <?php echo wp_json_encode(__('Leads / qualified', 'cah-split')); ?> },
+                        grid: { drawOnChartArea: false }
+                    }
+                }
+            }
+        });
+    }
+
+    if (document.readyState === 'complete') {
+        mountChart();
+    } else {
+        window.addEventListener('load', mountChart);
+    }
 })();
 </script>

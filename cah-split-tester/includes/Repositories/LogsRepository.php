@@ -69,14 +69,17 @@ final class LogsRepository
     {
         global $wpdb;
         $table = $this->table();
+        $since = (new \DateTimeImmutable(\current_time('mysql')))
+            ->modify('-' . \max(1, $hours) . ' hours')
+            ->format('Y-m-d H:i:s');
         $rows  = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT source, COUNT(*) AS total
                  FROM {$table}
-                 WHERE created_at >= (UTC_TIMESTAMP() - INTERVAL %d HOUR)
+                 WHERE created_at >= %s
                  GROUP BY source
                  ORDER BY total DESC",
-                $hours
+                $since
             ),
             ARRAY_A
         );
@@ -94,13 +97,16 @@ final class LogsRepository
     {
         global $wpdb;
         $table = $this->table();
+        $since = (new \DateTimeImmutable(\current_time('mysql')))
+            ->modify('-' . \max(1, $hours) . ' hours')
+            ->format('Y-m-d H:i:s');
         $rows  = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT level, COUNT(*) AS total
                  FROM {$table}
-                 WHERE created_at >= (UTC_TIMESTAMP() - INTERVAL %d HOUR)
+                 WHERE created_at >= %s
                  GROUP BY level",
-                $hours
+                $since
             ),
             ARRAY_A
         );
@@ -115,10 +121,13 @@ final class LogsRepository
     {
         global $wpdb;
         $table = $this->table();
+        $cutoff = (new \DateTimeImmutable(\current_time('mysql')))
+            ->modify('-' . \max(1, $days) . ' days')
+            ->format('Y-m-d H:i:s');
         return (int) $wpdb->query(
             $wpdb->prepare(
-                "DELETE FROM {$table} WHERE created_at < (NOW() - INTERVAL %d DAY)",
-                $days
+                "DELETE FROM {$table} WHERE created_at < %s",
+                $cutoff
             )
         );
     }

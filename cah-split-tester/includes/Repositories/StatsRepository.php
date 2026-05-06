@@ -12,48 +12,29 @@ if (!defined('ABSPATH')) {
 
 final class StatsRepository
 {
-    public function __construct(
-        private readonly ?Settings $settings = null
-    ) {
+    public function __construct(?Settings $settings = null)
+    {
+        // Kept for constructor compatibility with Plugin; timestamp storage is
+        // site-local, so Settings no longer affects StatsRepository queries.
     }
 
     /**
-     * Resolve the dashboard timezone (falls back to UTC if no Settings
-     * instance was injected, e.g. from legacy callers).
+     * created_at is stored with WordPress' current_time('mysql'), so report
+     * windows must use the WordPress site timezone, not MySQL/UTC.
      */
-    private function tz(): \DateTimeZone
+    private function storageTimezone(): \DateTimeZone
     {
-        if ($this->settings !== null) {
-            return $this->settings->dashboardTimezone();
-        }
-        return new \DateTimeZone('UTC');
+        return \function_exists('wp_timezone') ? \wp_timezone() : new \DateTimeZone('UTC');
     }
 
     /**
-     * Convert a 'YYYY-MM-DD HH:MM:SS' string interpreted in the dashboard
-     * timezone to its equivalent UTC string for SQL WHERE clauses against
-     * created_at columns (which are stored in UTC).
+     * created_at is stored with WordPress' current_time('mysql'), i.e. the
+     * site's local wall-clock time, not UTC. Date filters therefore need to
+     * compare the local picker strings directly instead of converting them.
      */
-    private function localStringToUtc(string $local): string
+    private function localStringForSql(string $local): string
     {
-        try {
-            $dt = new \DateTimeImmutable($local, $this->tz());
-        } catch (\Throwable $e) {
-            // If the input is malformed, fall back to treating it as UTC
-            // verbatim — better than throwing inside the dashboard render.
-            return $local;
-        }
-        return $dt->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
-    }
-
-    /**
-     * Current offset (seconds) between the dashboard timezone and UTC at
-     * "now". Used for DATE() bucketing in the daily series query — see
-     * the comment in dailySeries() for the DST caveat.
-     */
-    private function tzOffsetSeconds(): int
-    {
-        return (new \DateTimeImmutable('now', $this->tz()))->getOffset();
+        return $local;
     }
 
     private function pageviewsTable(): string
@@ -86,15 +67,12 @@ final class StatsRepository
         $pv     = $this->pageviewsTable();
         $ld     = $this->leadsTable();
         $t      = $this->testsTable();
-        // "Last N days" is anchored on midnight LOCAL TIME today, then we
-        // walk N days back. That makes "Last 7 days" feel right to a human:
-        // it covers the previous 7 calendar days in the dashboard timezone,
-        // not a rolling 7×24 hour window in UTC. We then convert the local
-        // boundary to UTC before issuing the SQL.
-        $tz        = $this->tz();
+        // "Last N days" is anchored on local dashboard time. created_at rows
+        // are stored in WordPress local time, so keep the SQL boundary local.
+        $tz        = $this->storageTimezone();
         $localNow  = new \DateTimeImmutable('now', $tz);
         $sinceLocal = $localNow->modify('-' . (int) $days . ' days');
-        $since = $sinceLocal->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+        $since = $sinceLocal->format('Y-m-d H:i:s');
 
         $activeTests = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$t} WHERE status = %s",
@@ -139,10 +117,10 @@ final class StatsRepository
         global $wpdb;
         $pv    = $this->pageviewsTable();
         $ld    = $this->leadsTable();
-        // Same anchoring as overview() — N local days back, then to UTC.
-        $tz         = $this->tz();
+        // Same anchoring as overview() — N local days back.
+        $tz         = $this->storageTimezone();
         $sinceLocal = (new \DateTimeImmutable('now', $tz))->modify('-' . (int) $days . ' days');
-        $since      = $sinceLocal->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+        $since      = $sinceLocal->format('Y-m-d H:i:s');
 
         $placeholders = \implode(',', \array_fill(0, \count($testIds), '%d'));
         $args         = \array_merge($testIds, [$since]);
@@ -184,11 +162,10 @@ final class StatsRepository
         $ld = $this->leadsTable();
         $vt = $this->variantsTable();
 
-        // $from / $to come from the date-range picker as local-time strings
-        // (e.g. '2026-04-28 00:00:00' meaning midnight local). Translate to
-        // UTC before hitting the SQL because created_at is stored as UTC.
-        $fromUtc = $this->localStringToUtc($from);
-        $toUtc   = $this->localStringToUtc($to);
+        // $from / $to come from the date-range picker as local-time strings.
+        // created_at is stored in WordPress local time, so compare directly.
+        $fromSql = $this->localStringForSql($from);
+        $toSql   = $this->localStringForSql($to);
 
         // "Comparable" leads = leads that do NOT trip an obvious disqualifier.
         // Per the actual business rules used by Growform AND HTML V1
@@ -254,7 +231,7 @@ final class StatsRepository
         ";
 
         $rows = $wpdb->get_results(
-            $wpdb->prepare($query, $testId, $fromUtc, $toUtc, $testId, $fromUtc, $toUtc, $testId),
+            $wpdb->prepare($query, $testId, $fromSql, $toSql, $testId, $fromSql, $toSql, $testId),
             ARRAY_A
         );
         return \is_array($rows) ? $rows : [];
@@ -266,46 +243,47 @@ final class StatsRepository
         $pv = $this->pageviewsTable();
         $ld = $this->leadsTable();
 
-        $fromUtc = $this->localStringToUtc($from);
-        $toUtc   = $this->localStringToUtc($to);
-
-        // To bucket rows by LOCAL calendar day (instead of UTC), shift the
-        // stored UTC timestamp by the current dashboard-timezone offset, then
-        // call DATE() on the result. Using a fixed offset rather than
-        // CONVERT_TZ() avoids depending on MySQL's tz tables being populated
-        // (Hostinger / shared MySQL often have them empty).
-        // Caveat: on the day a DST transition lands within the date range,
-        // a small handful of rows near midnight may bucket on the "wrong"
-        // side by 1 hour. Acceptable for an A/B dashboard but flagged here.
-        $offsetSeconds = $this->tzOffsetSeconds();
+        $fromSql = $this->localStringForSql($from);
+        $toSql   = $this->localStringForSql($to);
 
         $pvRows = $wpdb->get_results($wpdb->prepare(
-            "SELECT DATE(created_at + INTERVAL %d SECOND) AS day, variant_id, COUNT(*) AS total
+            "SELECT DATE(created_at) AS day, variant_id, COUNT(*) AS total
              FROM {$pv}
              WHERE test_id = %d AND created_at BETWEEN %s AND %s
              GROUP BY day, variant_id
              ORDER BY day ASC",
-            $offsetSeconds,
             $testId,
-            $fromUtc,
-            $toUtc
+            $fromSql,
+            $toSql
         ), ARRAY_A) ?: [];
 
         $ldRows = $wpdb->get_results($wpdb->prepare(
-            "SELECT DATE(created_at + INTERVAL %d SECOND) AS day, variant_id, COUNT(*) AS total
+            "SELECT DATE(created_at) AS day, variant_id, COUNT(*) AS total
              FROM {$ld}
              WHERE test_id = %d AND created_at BETWEEN %s AND %s
              GROUP BY day, variant_id
              ORDER BY day ASC",
-            $offsetSeconds,
             $testId,
-            $fromUtc,
-            $toUtc
+            $fromSql,
+            $toSql
+        ), ARRAY_A) ?: [];
+
+        $qlRows = $wpdb->get_results($wpdb->prepare(
+            "SELECT DATE(created_at) AS day, variant_id, COUNT(*) AS total
+             FROM {$ld}
+             WHERE test_id = %d AND created_at BETWEEN %s AND %s AND lead_stage = %s
+             GROUP BY day, variant_id
+             ORDER BY day ASC",
+            $testId,
+            $fromSql,
+            $toSql,
+            'qualified'
         ), ARRAY_A) ?: [];
 
         return [
             'pageviews' => $pvRows,
             'leads'     => $ldRows,
+            'qualified' => $qlRows,
         ];
     }
 
@@ -319,8 +297,8 @@ final class StatsRepository
         $ld = $this->leadsTable();
         $pv = $this->pageviewsTable();
 
-        $fromUtc = $this->localStringToUtc($from);
-        $toUtc   = $this->localStringToUtc($to);
+        $fromSql = $this->localStringForSql($from);
+        $toSql   = $this->localStringForSql($to);
 
         $leadAgg = $wpdb->get_results($wpdb->prepare(
             "SELECT {$field} AS bucket, variant_id, COUNT(*) AS leads,
@@ -331,8 +309,8 @@ final class StatsRepository
              ORDER BY leads DESC
              LIMIT %d",
             $testId,
-            $fromUtc,
-            $toUtc,
+            $fromSql,
+            $toSql,
             $limit * 10
         ), ARRAY_A) ?: [];
 
@@ -345,7 +323,7 @@ final class StatsRepository
         }
         $bucketPlaceholders = \implode(',', \array_fill(0, \count($buckets), '%s'));
 
-        $pvArgs = \array_merge([$testId, $fromUtc, $toUtc], \array_values($buckets));
+        $pvArgs = \array_merge([$testId, $fromSql, $toSql], \array_values($buckets));
         $pvAgg = $wpdb->get_results($wpdb->prepare(
             "SELECT {$field} AS bucket, variant_id, COUNT(*) AS pageviews
              FROM {$pv}

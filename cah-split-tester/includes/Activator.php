@@ -148,6 +148,22 @@ final class Activator
             KEY idx_source (source)
         ) {$charsetCollate};";
 
+        $formFunnelEvents = "CREATE TABLE {$prefix}cah_form_funnel_events (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            test_id BIGINT UNSIGNED NOT NULL,
+            variant_id BIGINT UNSIGNED NOT NULL,
+            visitor_id CHAR(36) NOT NULL,
+            event_type VARCHAR(32) NOT NULL,
+            step_number TINYINT UNSIGNED NOT NULL,
+            step_name VARCHAR(64) NOT NULL,
+            created_at DATETIME NOT NULL,
+            PRIMARY KEY  (id),
+            KEY idx_test_date (test_id, created_at),
+            KEY idx_variant_date (variant_id, created_at),
+            KEY idx_visitor (visitor_id),
+            KEY idx_step_event (event_type, step_number, created_at)
+        ) {$charsetCollate};";
+
         $log = "CREATE TABLE {$prefix}cah_log (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             level VARCHAR(10) NOT NULL DEFAULT 'info',
@@ -165,6 +181,7 @@ final class Activator
         \dbDelta($variants);
         \dbDelta($pageviews);
         \dbDelta($leads);
+        \dbDelta($formFunnelEvents);
         \dbDelta($log);
     }
 

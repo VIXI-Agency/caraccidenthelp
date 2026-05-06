@@ -115,6 +115,26 @@
     window.cahSplit.trackPageview = trackPageview;
     window.cahSplit.submitLead = submitLead;
 
+    /**
+     * Persists multi-step form analytics to WordPress (first-party). Does not
+     * replace GTM — complements it when tags are blocked.
+     */
+    function trackFunnel(evt) {
+        if (!ctx.rest_base || !evt) {
+            return;
+        }
+        var body = {
+            test_id: ctx.test_id || null,
+            variant_id: ctx.variant_id || null,
+            visitor_id: ctx.visitor_id || null,
+            event_type: evt.event_type,
+            step_number: evt.step_number,
+            step_name: evt.step_name || ''
+        };
+        beacon(ctx.rest_base + '/form-funnel', body);
+    }
+    window.cahSplit.trackFunnel = trackFunnel;
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', trackPageview);
     } else {

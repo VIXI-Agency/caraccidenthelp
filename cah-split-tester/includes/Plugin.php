@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace VIXI\CahSplit;
 
 use VIXI\CahSplit\Admin\Admin;
+use VIXI\CahSplit\Repositories\FormFunnelRepository;
 use VIXI\CahSplit\Repositories\LeadsRepository;
 use VIXI\CahSplit\Repositories\LogsRepository;
 use VIXI\CahSplit\Repositories\PageviewsRepository;
@@ -26,6 +27,7 @@ final class Plugin
     public readonly VariantsRepository $variants;
     public readonly LeadsRepository $leads;
     public readonly PageviewsRepository $pageviews;
+    public readonly FormFunnelRepository $formFunnel;
     public readonly LogsRepository $logsRepo;
     public readonly Logger $logger;
     public readonly StatsRepository $stats;
@@ -50,6 +52,7 @@ final class Plugin
         $this->logger          = new Logger($this->logsRepo);
         $this->leads           = new LeadsRepository($this->logger);
         $this->pageviews       = new PageviewsRepository();
+        $this->formFunnel      = new FormFunnelRepository($this->settings);
         $this->stats           = new StatsRepository($this->settings);
         $this->significance    = new Significance();
         $this->leadStage       = new LeadStage();
@@ -64,6 +67,7 @@ final class Plugin
             $this->leadStage,
             $this->parser,
             $this->forwarder,
+            $this->formFunnel,
             $this->logger,
         );
         $this->cron            = new Cron($this->forwarder, $this->logsRepo);
@@ -79,6 +83,7 @@ final class Plugin
             $this->variants,
             $this->leads,
             $this->pageviews,
+            $this->formFunnel,
             $this->stats,
             $this->significance,
             $this->forwarder,

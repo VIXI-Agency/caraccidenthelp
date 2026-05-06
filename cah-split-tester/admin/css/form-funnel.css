@@ -1,0 +1,383 @@
+/* Form funnel dashboard — scoped, works inside WP admin */
+
+.cah-funnel-app {
+    --cah-fn-bg: #0c111d;
+    --cah-fn-surface: #161f2f;
+    --cah-fn-border: rgba(255, 255, 255, 0.08);
+    --cah-fn-accent: #0ea9ff;
+    --cah-fn-accent-dim: #225bc0;
+    --cah-fn-muted: rgba(226, 234, 255, 0.55);
+    --cah-fn-text: #e8eef8;
+    --cah-fn-radius: 12px;
+    --cah-fn-shadow: 0 18px 50px rgba(2, 6, 23, 0.45);
+
+    margin: -10px -20px -10px -2px;
+    padding: 0 20px 32px;
+    max-width: 1400px;
+    font-feature-settings: "tnum";
+    color: #182333;
+}
+
+.cah-funnel-app *,
+.cah-funnel-app *::before,
+.cah-funnel-app *::after {
+    box-sizing: border-box;
+}
+
+.cah-funnel-hero {
+    background: linear-gradient(135deg, var(--cah-fn-bg) 0%, #121a29 52%, var(--cah-fn-accent-dim) 180%);
+    color: var(--cah-fn-text);
+    padding: 28px 32px;
+    margin: 0 -20px 24px -20px;
+    border-radius: 0 var(--cah-fn-radius) var(--cah-fn-radius) 0;
+    box-shadow: 0 10px 26px rgba(2, 6, 23, 0.28);
+    position: relative;
+    overflow: hidden;
+}
+
+.cah-funnel-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 680px 200px at 90% -20%, rgba(14, 169, 255, 0.22), transparent 55%);
+    pointer-events: none;
+}
+
+.cah-funnel-hero-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.cah-funnel-hero h1 {
+    margin: 0 0 6px;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--cah-fn-text);
+}
+
+.cah-funnel-hero-tag {
+    margin: 0;
+    font-size: 13px;
+    color: var(--cah-fn-muted);
+    max-width: 620px;
+    line-height: 1.5;
+}
+
+.cah-funnel-filters-wrap {
+    position: relative;
+    z-index: 1;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--cah-fn-border);
+    backdrop-filter: blur(8px);
+    border-radius: var(--cah-fn-radius);
+    padding: 12px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 14px;
+}
+
+.cah-funnel-filters-wrap label span {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--cah-fn-muted);
+    margin-bottom: 4px;
+}
+
+.cah-funnel-filters-wrap select,
+.cah-funnel-filters-wrap input[type="date"] {
+    min-height: 36px;
+    border-radius: 8px !important;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--cah-fn-text);
+    padding: 0 10px;
+}
+
+.cah-funnel-filters-wrap select option {
+    color: #111;
+}
+
+.cah-funnel-filters-wrap .button.primary {
+    background: linear-gradient(180deg, var(--cah-fn-accent) 0%, #0090e0 100%);
+    border: none;
+    color: #fff;
+    padding: 0 18px;
+    min-height: 36px;
+    line-height: 34px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.cah-funnel-filters-wrap .button.primary:hover {
+    filter: brightness(1.06);
+}
+
+.cah-date-input {
+    cursor: pointer;
+    min-width: 132px;
+}
+
+.cah-funnel-fixed-scope {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.06);
+    min-height: 36px;
+}
+
+.cah-funnel-fixed-label {
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--cah-fn-muted);
+    margin-bottom: 2px;
+}
+
+.cah-funnel-fixed-scope strong {
+    font-size: 14px;
+    color: #e2e8f0;
+    font-weight: 600;
+}
+
+.cah-fn-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.cah-fn-kpi-card {
+    background: #ffffff;
+    border: 1px solid #d8e1ef;
+    border-radius: var(--cah-fn-radius);
+    padding: 18px 20px;
+    box-shadow: 0 8px 20px rgba(2, 6, 23, 0.08);
+    position: relative;
+    overflow: visible;
+}
+
+.cah-fn-kpi-card::before {
+    content: "";
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cah-fn-accent), transparent);
+    opacity: 0.45;
+}
+
+.cah-fn-kpi-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #64748b;
+    margin: 0 0 6px;
+}
+
+.cah-tip {
+    display: inline-flex;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    margin-left: 5px;
+    background: #0ea9ff;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: help;
+    position: relative;
+    vertical-align: text-top;
+}
+
+.cah-tip::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: calc(100% + 8px);
+    min-width: 220px;
+    max-width: 320px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.45;
+    white-space: normal;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 0 8px 18px rgba(2, 6, 23, 0.3);
+    z-index: 20;
+}
+
+.cah-tip:hover::after {
+    opacity: 1;
+}
+
+.cah-fn-kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--cah-fn-accent);
+    line-height: 1.2;
+}
+
+.cah-fn-kpi-sub {
+    font-size: 12px;
+    color: #6b7a90;
+    margin-top: 4px;
+}
+
+.cah-fn-layout {
+    display: grid;
+    grid-template-columns: 1fr minmax(300px, 360px);
+    gap: 20px;
+    align-items: start;
+}
+
+@media (max-width: 1100px) {
+    .cah-fn-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.cah-fn-panel {
+    background: #ffffff;
+    border-radius: var(--cah-fn-radius);
+    border: 1px solid #d8e1ef;
+    box-shadow: 0 8px 20px rgba(2, 6, 23, 0.08);
+    overflow: hidden;
+}
+
+.cah-fn-panel-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--cah-fn-border);
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    letter-spacing: 0.02em;
+}
+
+.cah-fn-table-wrap {
+    overflow-x: auto;
+}
+
+.cah-fn-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    color: #334155;
+}
+
+.cah-fn-table th,
+.cah-fn-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--cah-fn-border);
+    text-align: left;
+}
+
+.cah-fn-table th {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    background: #f8fafc;
+}
+
+.cah-fn-table tbody tr:hover {
+    background: #f1f7ff;
+}
+
+.cah-fn-q {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.cah-fn-meta {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 400;
+}
+
+.cah-fn-num {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.03em;
+}
+
+.cah-fn-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.cah-fn-pill--ok {
+    background: rgba(22, 183, 90, 0.15);
+    color: #61e8a9;
+}
+
+.cah-fn-pill--risk {
+    background: rgba(255, 118, 90, 0.12);
+    color: #ff9f8a;
+}
+
+.cah-fn-hint-bar {
+    font-size: 12px;
+    color: #64748b;
+    padding: 12px 20px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    line-height: 1.5;
+}
+
+.cah-fn-chart-pane {
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+}
+
+.cah-fn-chart-pane .cah-fn-panel-head {
+    margin-bottom: 0;
+}
+
+.cah-fn-chart-canvas-wrap {
+    padding: 14px;
+    flex: 1;
+    min-height: 360px;
+}
+
+.cah-fn-empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--cah-fn-muted);
+    font-size: 14px;
+}
+
+.cah-fn-notice {
+    border-left: 3px solid #ffab40;
+    background: rgba(255, 171, 64, 0.08);
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--cah-fn-muted);
+}

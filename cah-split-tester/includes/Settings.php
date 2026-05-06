@@ -124,6 +124,20 @@ final class Settings
         }
     }
 
+    /** Human-readable timezone for admin footnotes (funnel, date pickers). */
+    public function dashboardTimezoneLabel(): string
+    {
+        $raw = $this->dashboardTimezoneRaw();
+        if (isset(self::DASHBOARD_TZ_CHOICES[$raw])) {
+            return self::DASHBOARD_TZ_CHOICES[$raw];
+        }
+        try {
+            return $this->dashboardTimezone()->getName();
+        } catch (\Throwable $e) {
+            return 'UTC';
+        }
+    }
+
     public function update(array $partial): bool
     {
         $merged = \array_merge($this->all(), $partial);

@@ -6,6 +6,7 @@ namespace VIXI\CahSplit\Admin;
 
 use VIXI\CahSplit\LeadReprocessor;
 use VIXI\CahSplit\MakeForwarder;
+use VIXI\CahSplit\Repositories\FormFunnelRepository;
 use VIXI\CahSplit\Repositories\LeadsRepository;
 use VIXI\CahSplit\Repositories\LogsRepository;
 use VIXI\CahSplit\Repositories\PageviewsRepository;
@@ -26,6 +27,7 @@ final class Admin
     public const LEADS_SLUG    = 'cah-split-leads';
     public const LOGS_SLUG     = 'cah-split-logs';
     public const SETTINGS_SLUG = 'cah-split-settings';
+    public const FUNNEL_SLUG   = 'cah-split-form-funnel';
 
     public const CAPABILITY = 'manage_options';
 
@@ -37,6 +39,7 @@ final class Admin
         private readonly VariantsRepository $variants,
         private readonly LeadsRepository $leads,
         private readonly PageviewsRepository $pageviews,
+        private readonly FormFunnelRepository $formFunnel,
         private readonly StatsRepository $stats,
         private readonly Significance $significance,
         private readonly MakeForwarder $forwarder,
@@ -49,6 +52,7 @@ final class Admin
     {
         \add_action('admin_menu', [$this, 'registerMenu']);
         \add_action('admin_enqueue_scripts', [$this, 'enqueueAssets']);
+        \add_action('in_admin_header', [$this, 'suppressForeignNoticesOnFunnel'], 1);
         \add_action('admin_post_cah_split_save_settings', [$this, 'handleSaveSettings']);
         \add_action('admin_post_cah_split_save_test', [$this, 'handleSaveTest']);
         \add_action('admin_post_cah_split_delete_test', [$this, 'handleDeleteTest']);
@@ -59,6 +63,7 @@ final class Admin
         \add_action('admin_post_cah_split_retry_make', [$this, 'handleRetryMake']);
         \add_action('admin_post_cah_split_reset_test_stats', [$this, 'handleResetTestStats']);
         \add_action('admin_post_cah_split_reprocess_unknown', [$this, 'handleReprocessUnknown']);
+        \add_action('admin_post_cah_split_reprocess_all', [$this, 'handleReprocessAll']);
         \add_action('admin_post_cah_split_clear_logs', [$this, 'handleClearLogs']);
     }
 
@@ -103,6 +108,15 @@ final class Admin
 
         \add_submenu_page(
             self::MENU_SLUG,
+            \__('Form funnel', 'cah-split'),
+            \__('Form funnel', 'cah-split'),
+            self::CAPABILITY,
+            self::FUNNEL_SLUG,
+            [$this, 'renderFormFunnel']
+        );
+
+        \add_submenu_page(
+            self::MENU_SLUG,
             \__('Logs', 'cah-split'),
             \__('Logs', 'cah-split'),
             self::CAPABILITY,
@@ -118,6 +132,23 @@ final class Admin
             self::SETTINGS_SLUG,
             [$this, 'renderSettings']
         );
+    }
+
+    /**
+     * Keep the funnel dashboard clean: hide notices injected by unrelated
+     * plugins/themes on this specific screen only.
+     */
+    public function suppressForeignNoticesOnFunnel(): void
+    {
+        $page = isset($_GET['page']) ? \sanitize_key((string) $_GET['page']) : '';
+        if ($page !== self::FUNNEL_SLUG) {
+            return;
+        }
+
+        \remove_all_actions('admin_notices');
+        \remove_all_actions('all_admin_notices');
+        \remove_all_actions('network_admin_notices');
+        \remove_all_actions('user_admin_notices');
     }
 
     public function enqueueAssets(string $hookSuffix): void
@@ -144,7 +175,8 @@ final class Admin
         $action = isset($_GET['action']) ? \sanitize_key((string) $_GET['action']) : '';
         $page   = isset($_GET['page']) ? \sanitize_key((string) $_GET['page']) : '';
         $needsChart = ($page === self::MENU_SLUG)
-            || ($page === self::TESTS_SLUG && $action === 'detail');
+            || ($page === self::TESTS_SLUG && $action === 'detail')
+            || ($page === self::FUNNEL_SLUG);
         if ($needsChart) {
             \wp_enqueue_script(
                 'cah-split-chartjs',
@@ -154,6 +186,145 @@ final class Admin
                 true
             );
         }
+
+        if ($page === self::FUNNEL_SLUG) {
+            \wp_enqueue_style(
+                'cah-split-jquery-ui-theme',
+                'https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css',
+                [],
+                '1.13.2'
+            );
+            \wp_enqueue_script('jquery-ui-datepicker');
+            \wp_enqueue_style(
+                'cah-split-form-funnel',
+                CAH_SPLIT_PLUGIN_URL . 'admin/css/form-funnel.css',
+                [],
+                CAH_SPLIT_VERSION
+            );
+            \wp_enqueue_script(
+                'cah-split-form-funnel-datepicker',
+                CAH_SPLIT_PLUGIN_URL . 'admin/js/form-funnel-datepicker.js',
+                ['jquery', 'jquery-ui-datepicker'],
+                CAH_SPLIT_VERSION,
+                true
+            );
+            \wp_enqueue_script(
+                'cah-split-form-funnel-chart',
+                CAH_SPLIT_PLUGIN_URL . 'admin/js/form-funnel-chart.js',
+                ['cah-split-chartjs'],
+                CAH_SPLIT_VERSION,
+                true
+            );
+        }
+    }
+
+    public function renderFormFunnel(): void
+    {
+        $tests = $this->tests->all();
+        if ($tests === []) {
+            $this->renderView('form-funnel', [
+                'tests'          => [],
+                'report'         => null,
+                'overview'       => null,
+                'fromDate'       => '',
+                'toDate'         => '',
+                'testId'         => 0,
+                'variantId'      => 0,
+                'variantOptions' => [],
+                'timezoneLabel'  => $this->settings->dashboardTimezoneLabel(),
+            ]);
+            return;
+        }
+
+        $requestedTest = isset($_GET['test_id']) ? (int) $_GET['test_id'] : 0;
+        $testId          = $requestedTest > 0
+            ? $requestedTest
+            : (int) ($tests[0]['id'] ?? 0);
+        $test            = $this->tests->find($testId);
+        if ($test === null) {
+            $testId = (int) $tests[0]['id'];
+            $test    = $this->tests->find($testId);
+        }
+        if ($test === null) {
+            \wp_die(\esc_html__('Test not found.', 'cah-split'));
+        }
+
+        [$fromDt, $toDt] = $this->parseDateRange();
+
+        $variantOptions = $this->variants->forTest($testId);
+
+        // Funnel dashboard is HTML-v1 specific by product decision:
+        // lock to the v1.html-backed variant instead of aggregating all variants.
+        $htmlVariantId = 0;
+        $htmlVariantName = '';
+        foreach ($variantOptions as $variantRow) {
+            $htmlFile = isset($variantRow['html_file']) ? (string) $variantRow['html_file'] : '';
+            if (\strtolower(\basename($htmlFile)) === 'v1.html') {
+                $htmlVariantId = (int) $variantRow['id'];
+                $htmlVariantName = (string) ($variantRow['name'] ?? '');
+                break;
+            }
+        }
+        if ($htmlVariantId === 0) {
+            // Secondary matcher for legacy rows where html_file is blank:
+            // pick variants explicitly named/sluggified as html-v1.
+            foreach ($variantOptions as $variantRow) {
+                $slug = \strtolower((string) ($variantRow['slug'] ?? ''));
+                $name = \strtolower((string) ($variantRow['name'] ?? ''));
+                if (\str_contains($slug, 'html') && \str_contains($slug, 'v1')) {
+                    $htmlVariantId = (int) $variantRow['id'];
+                    $htmlVariantName = (string) ($variantRow['name'] ?? '');
+                    break;
+                }
+                if (\str_contains($name, 'html') && \str_contains($name, 'v1')) {
+                    $htmlVariantId = (int) $variantRow['id'];
+                    $htmlVariantName = (string) ($variantRow['name'] ?? '');
+                    break;
+                }
+            }
+        }
+        if ($htmlVariantId === 0 && !empty($variantOptions)) {
+            // Final fallback for broken legacy data: first variant only.
+            $htmlVariantId = (int) $variantOptions[0]['id'];
+            $htmlVariantName = (string) ($variantOptions[0]['name'] ?? '');
+        }
+        $variantScope = $htmlVariantId > 0 ? $htmlVariantId : null;
+
+        $report = $this->formFunnel->buildReport((int) $test['id'], $variantScope, $fromDt, $toDt);
+
+        $overview = [
+            'from_date'       => \substr($fromDt, 0, 10),
+            'to_date'         => \substr($toDt, 0, 10),
+            'event_row_count' => $report['event_rows'],
+        ];
+
+        if (!empty($report['funnel']['steps'])) {
+            $steps = $report['funnel']['steps'];
+            $labels = [];
+            $pcts   = [];
+            foreach ($steps as $row) {
+                $labels[] = \sprintf('%02d — %s', (int) $row['step'], (string) $row['title']);
+                $pcts[]   = (float) $row['pct_completed'];
+            }
+            \wp_localize_script('cah-split-form-funnel-chart', 'cahSplitFunnelDash', [
+                'labels' => $labels,
+                'pct'    => $pcts,
+            ]);
+        }
+
+        $this->renderView('form-funnel', [
+            'tests'          => $tests,
+            'test'           => $test,
+            'report'         => $report,
+            'overview'       => $overview,
+            'fromDate'       => $overview['from_date'],
+            'toDate'         => $overview['to_date'],
+            'testId'         => $testId,
+            'variantId'      => $htmlVariantId,
+            'variantName'    => $htmlVariantName,
+            'variantOptions' => $variantOptions,
+            'timezoneLabel'  => $this->settings->dashboardTimezoneLabel(),
+        ]);
     }
 
     public function renderDashboard(): void
@@ -201,6 +372,7 @@ final class Admin
                 'significance' => $this->significance,
                 'from'         => $from,
                 'to'           => $to,
+                'dashboardTz'  => $this->settings->dashboardTimezone(),
             ]);
             return;
         }
@@ -212,11 +384,10 @@ final class Admin
 
     private function parseDateRange(): array
     {
-        // The user picks dates in their dashboard timezone (Settings),
-        // so default "today" / "30 days ago" must also be computed in that
-        // zone — not via current_time()/gmdate() (which use the WP site zone
-        // or UTC). The repository converts to UTC before hitting SQL.
-        $tz   = $this->settings->dashboardTimezone();
+        // created_at is stored with current_time('mysql'), which uses the
+        // WordPress site timezone. Date defaults must be anchored to that
+        // same clock so "today" lines up with stored rows.
+        $tz   = \function_exists('wp_timezone') ? \wp_timezone() : new \DateTimeZone('UTC');
         $from = isset($_GET['from']) ? \sanitize_text_field((string) $_GET['from']) : '';
         $to   = isset($_GET['to']) ? \sanitize_text_field((string) $_GET['to']) : '';
 
@@ -228,6 +399,10 @@ final class Admin
         }
         if (!\preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)) {
             $to = $todayLocal;
+        }
+
+        if ($from > $to) {
+            [$from, $to] = [$to, $from];
         }
 
         return [$from . ' 00:00:00', $to . ' 23:59:59'];
@@ -616,8 +791,12 @@ final class Admin
             return;
         }
 
+        $deletedPageviews = 0;
+        $deletedFunnel    = 0;
+        $deletedLeads     = 0;
         try {
             $deletedPageviews = $this->pageviews->deleteByTestId($id);
+            $deletedFunnel    = $this->formFunnel->deleteByTestId($id);
             $deletedLeads     = $this->leads->deleteByTestId($id);
         } catch (\Throwable $e) {
             \set_transient(
@@ -637,6 +816,7 @@ final class Admin
             'test_id'            => (string) $id,
             'reset_stats'        => '1',
             'reset_pageviews'    => (string) $deletedPageviews,
+            'reset_funnel'       => (string) $deletedFunnel,
             'reset_leads'        => (string) $deletedLeads,
         ]);
     }
@@ -676,6 +856,52 @@ final class Admin
             'action'           => 'edit',
             'test_id'          => (string) $id,
             'reprocessed'      => '1',
+            'rp_scanned'       => (string) $stats['scanned'],
+            'rp_updated'       => (string) $stats['updated'],
+            'rp_qualified'     => (string) $stats['qualified'],
+            'rp_disqualified'  => (string) $stats['disqualified'],
+            'rp_still_unknown' => (string) $stats['still_unknown'],
+            'rp_skipped'       => (string) $stats['skipped'],
+            'rp_errors'        => (string) $stats['errors'],
+        ]);
+    }
+
+    public function handleReprocessAll(): void
+    {
+        $this->assertCap();
+        \check_admin_referer('cah_split_reprocess_all');
+
+        $id = isset($_GET['test_id']) ? (int) $_GET['test_id'] : 0;
+        if ($id <= 0 || $this->tests->find($id) === null) {
+            \set_transient(
+                'cah_split_error_' . \get_current_user_id(),
+                \__('Test not found.', 'cah-split'),
+                60
+            );
+            $this->redirectTo(self::TESTS_SLUG);
+            return;
+        }
+
+        try {
+            $stats = $this->reprocessor->reprocessAllForTest($id, 5000);
+        } catch (\Throwable $e) {
+            \set_transient(
+                'cah_split_error_' . \get_current_user_id(),
+                $e->getMessage(),
+                60
+            );
+            $this->redirectTo(self::TESTS_SLUG, [
+                'action'  => 'edit',
+                'test_id' => (string) $id,
+            ]);
+            return;
+        }
+
+        $this->redirectTo(self::TESTS_SLUG, [
+            'action'           => 'edit',
+            'test_id'          => (string) $id,
+            'reprocessed'      => '1',
+            'rp_scope'         => 'all',
             'rp_scanned'       => (string) $stats['scanned'],
             'rp_updated'       => (string) $stats['updated'],
             'rp_qualified'     => (string) $stats['qualified'],

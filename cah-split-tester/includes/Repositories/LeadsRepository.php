@@ -103,12 +103,15 @@ final class LeadsRepository
             $args[]    = $phone;
         }
         $where = '(' . \implode(' OR ', $clauses) . ')';
+        $cutoff = (new \DateTimeImmutable(\current_time('mysql')))
+            ->modify('-' . $window . ' seconds')
+            ->format('Y-m-d H:i:s');
         $sql = "SELECT id FROM {$table}
                 WHERE {$where}
-                  AND created_at >= (NOW() - INTERVAL %d SECOND)
+                  AND created_at >= %s
                 ORDER BY id DESC
                 LIMIT 1";
-        $args[] = $window;
+        $args[] = $cutoff;
         $prepared = $wpdb->prepare($sql, $args);
         $id = $wpdb->get_var($prepared);
         return $id !== null ? (int) $id : 0;
@@ -163,21 +166,25 @@ final class LeadsRepository
         $table = $this->table();
         // Pick up both explicitly-failed rows AND stuck-pending rows (>=5 minutes old).
         // The latter guards against non-blocking dispatch paths that never updated
-        // status, or crashes between insert and forward(). created_at is MySQL
-        // datetime in WP-local time; the 5-min window is measured against NOW().
+        // status, or crashes between insert and forward(). created_at is stored
+        // in WordPress-local time, so compute the cutoff in that same clock.
+        $pendingCutoff = (new \DateTimeImmutable(\current_time('mysql')))
+            ->modify('-5 minutes')
+            ->format('Y-m-d H:i:s');
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT * FROM {$table}
                  WHERE make_attempts < %d
                    AND (
                      make_status = %s
-                     OR (make_status = %s AND created_at < (NOW() - INTERVAL 5 MINUTE))
+                     OR (make_status = %s AND created_at < %s)
                    )
                  ORDER BY id ASC
                  LIMIT %d",
                 $maxAttempts,
                 self::MAKE_STATUS_FAILED,
                 self::MAKE_STATUS_PENDING,
+                $pendingCutoff,
                 $limit
             ),
             ARRAY_A
@@ -189,16 +196,20 @@ final class LeadsRepository
     {
         global $wpdb;
         $table = $this->table();
+        $pendingCutoff = (new \DateTimeImmutable(\current_time('mysql')))
+            ->modify('-5 minutes')
+            ->format('Y-m-d H:i:s');
         return (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$table}
              WHERE make_attempts < %d
                AND (
                  make_status = %s
-                 OR (make_status = %s AND created_at < (NOW() - INTERVAL 5 MINUTE))
+                 OR (make_status = %s AND created_at < %s)
                )",
             $maxAttempts,
             self::MAKE_STATUS_FAILED,
-            self::MAKE_STATUS_PENDING
+            self::MAKE_STATUS_PENDING,
+            $pendingCutoff
         ));
     }
 
@@ -335,6 +346,28 @@ final class LeadsRepository
                  LIMIT %d",
                 $testId,
                 'unknown',
+                $limit
+            ),
+            ARRAY_A
+        );
+        return \is_array($rows) ? $rows : [];
+    }
+
+    /**
+     * Return rows with any lead_stage for a test that still have raw_payload.
+     * Used for full historical reprocessing after stage-rule changes.
+     */
+    public function findWithPayloadByTestId(int $testId, int $limit = 500): array
+    {
+        global $wpdb;
+        $table = $this->table();
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, raw_payload FROM {$table}
+                 WHERE test_id = %d AND raw_payload IS NOT NULL AND raw_payload <> ''
+                 ORDER BY id ASC
+                 LIMIT %d",
+                $testId,
                 $limit
             ),
             ARRAY_A

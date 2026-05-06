@@ -44,6 +44,43 @@ final class LeadReprocessor
     public function reprocessTest(int $testId, int $limit = 500): array
     {
         $rows = $this->leads->findUnknownByTestId($testId, $limit);
+        return $this->reprocessRows($rows);
+    }
+
+    /**
+     * Reprocess every lead with payload for the given test, regardless of
+     * current stage. Use after business-rule changes (e.g. service whitelist).
+     *
+     * @return array{
+     *   scanned: int,
+     *   updated: int,
+     *   qualified: int,
+     *   disqualified: int,
+     *   still_unknown: int,
+     *   skipped: int,
+     *   errors: int
+     * }
+     */
+    public function reprocessAllForTest(int $testId, int $limit = 5000): array
+    {
+        $rows = $this->leads->findWithPayloadByTestId($testId, $limit);
+        return $this->reprocessRows($rows);
+    }
+
+    /**
+     * @param array<int,array{id:mixed,raw_payload:mixed}> $rows
+     * @return array{
+     *   scanned: int,
+     *   updated: int,
+     *   qualified: int,
+     *   disqualified: int,
+     *   still_unknown: int,
+     *   skipped: int,
+     *   errors: int
+     * }
+     */
+    private function reprocessRows(array $rows): array
+    {
 
         $stats = [
             'scanned'       => 0,

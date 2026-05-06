@@ -90,6 +90,7 @@ final class Uninstaller
         $prefix = $wpdb->prefix;
         $tables = [
             "{$prefix}cah_log",
+            "{$prefix}cah_form_funnel_events",
             "{$prefix}cah_leads",
             "{$prefix}cah_pageviews",
             "{$prefix}cah_variants",

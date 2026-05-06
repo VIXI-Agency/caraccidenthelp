@@ -59,13 +59,26 @@ function cah_render_qa(?string $value, array $disqualifiers = []): string
 /**
  * Map the internal source slug to a friendly form-type label.
  */
-function cah_source_to_form_type(string $source): string
+function cah_source_to_form_type(string $source, string $rawPayload = ''): string
 {
     if ($source === 'path_a_html_v1') {
         return 'HTML';
     }
     if (strpos($source, 'path_b_') === 0) {
         return 'Growform';
+    }
+    // Legacy rows may have empty source even though raw_payload includes
+    // form metadata. Infer from payload to avoid misleading "—" in Form col.
+    if ($source === '' && $rawPayload !== '') {
+        $rawLower = strtolower($rawPayload);
+        if (strpos($rawLower, 'growform via /thank-you/') !== false
+            || strpos($rawLower, '"form_name":"growform') !== false) {
+            return 'Growform';
+        }
+        if (strpos($rawLower, 'mva - english html form') !== false
+            || strpos($rawLower, '"source":"path_a_html_v1"') !== false) {
+            return 'HTML';
+        }
     }
     if ($source === '') {
         return '—';
@@ -187,7 +200,7 @@ function cah_source_to_form_type(string $source): string
             <tbody>
                 <?php foreach ($leads as $lead) :
                     $sourceVal = (string) ($lead['source'] ?? '');
-                    $formType  = cah_source_to_form_type($sourceVal);
+                    $formType  = cah_source_to_form_type($sourceVal, (string) ($lead['raw_payload'] ?? ''));
                     ?>
                     <tr>
                         <td><code>#<?php echo esc_html((string) ($lead['id'] ?? '')); ?></code></td>

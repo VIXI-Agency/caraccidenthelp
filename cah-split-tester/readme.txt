@@ -3,7 +3,7 @@ Contributors: vixi-agency
 Tags: a/b testing, split testing, lead generation
 Requires at least: 6.2
 Requires PHP: 8.1
-Stable tag: 1.0.24
+Stable tag: 1.0.44
 License: Proprietary
 
 Generic A/B/N split testing for caraccidenthelp.net. WordPress is the source of truth for leads; Make.com is forwarded server-side after the lead is persisted.
@@ -35,6 +35,92 @@ The plugin ships with a hand-rolled PSR-4 autoloader used as a fallback when no 
 from the plugin root. No runtime dependencies are required.
 
 == Changelog ==
+
+= 1.0.44 =
+* `variants/v1.html` — Step 12 (Describe) is now optional. Once the lead has captured a contactable email (either Trestle's reverse-phone match after the Phone step, or the user-typed Email step) the form arms an autosubmit machinery on Step 12:
+  * 5-minute hard cap with a 3-second typing-idle grace so we never cut a typing user mid-sentence.
+  * `visibilitychange:hidden`, `pagehide`, `beforeunload`, and window `blur` all submit the lead immediately via `navigator.sendBeacon` (with `fetch keepalive` fallback) so leads land even when the browser is closing.
+  * Manual SUBMIT click and timeout-driven submit still show the complete screen and route to the correct qualified/disqualified URL; abandon-driven submits skip UI mutation and redirect because the page is already leaving.
+  * Empty Describe textarea is replaced with the fallback string `Briefly describe your accident to us.` for the lead payload.
+  * Anti-double-submit (`gfSubmittedOnce`) gates every path so a user who already had their lead autosubmitted cannot trigger a duplicate POST.
+  * `LeadStage::compute` is unaffected — qualification is derived from the answer fields, so an autosubmitted lead is counted exactly the same as a manually submitted one.
+  * BACK from Step 12 cancels the timer; re-advancing re-arms a fresh 5-minute window.
+
+= 1.0.43 =
+* Path B audit rows no longer hardcode `form_name` as “Growform via /thank-you/”. They now store a neutral `Path B capture via /<actual-path>/ (...)` label plus `form_meta.capture_path` and `form_meta.capture_url`, so rows from `/thank-you/`, `/finished/`, and `/diminished-value-claim/` can be distinguished during audits.
+
+= 1.0.42 =
+* Fix test-detail and Form Funnel date filters to match the actual storage model: pageviews, leads, funnel events, and logs are inserted with WordPress `current_time('mysql')` (site-local wall-clock time), not UTC. Stats queries now compare picker dates directly and bucket with `DATE(created_at)`, so same-day filters like `05/05 -> 05/05` include rows inserted at `2026-05-05 03:28` local time.
+* Logs summary counters and lead retry/dedupe windows now use WordPress-local time boundaries instead of MySQL `UTC_TIMESTAMP()` / `NOW()`, matching stored `created_at` values.
+* Date-range defaults now anchor to the WordPress site timezone, matching `current_time('mysql')` storage.
+* Settings copy now describes the stored timestamp behavior accurately.
+
+= 1.0.41 =
+* Test detail **Daily trend** chart adds per-variant **qualified** daily counts (`lead_stage = qualified`) alongside pageviews and all leads (same local-day bucketing as `dailySeries`). Right axis titled “Leads / qualified”; legend distinguishes dashed (leads) vs dotted + triangles (qualified).
+
+= 1.0.40 =
+* Test detail “Daily trend”: initialise Chart.js after footer scripts (`window.Chart` was undefined when the inline script ran). Normalise SQL day keys for merging, build the label range in dashboard timezone, auto-swap inverted From/To, and show clearer empty/error states.
+
+= 1.0.39 =
+* Leads list `Form` column now infers HTML/Growform from `raw_payload.form_meta.form_name` when `source` is empty, avoiding misleading `—` on legacy rows.
+* Added maintenance action: **Re-process ALL leads (rules refresh)** on test edit screen to recompute `lead_stage` for historical rows using current parser/stage rules (not just `unknown` rows).
+
+= 1.0.38 =
+* Form funnel `PageViews` KPI now uses v1-only events: `form_view` emitted directly by `variants/v1.html` and stored in `cah_form_funnel_events`.
+* Remove dependency on `cah_pageviews` for funnel pageview card to avoid mixing broader dashboard tracking with HTML-v1-only telemetry.
+* `/form-funnel` endpoint now accepts `form_view` event type.
+
+= 1.0.37 =
+* Tighten HTML v1 locking in Form funnel: variant selection now matches by `html_file` basename (`v1.html`) with fallback heuristics on slug/name containing `html` + `v1` for legacy rows.
+* Show resolved locked variant name in the scope badge for easier verification and debugging when PageViews look off.
+
+= 1.0.36 =
+* Funnel dashboard polish: suppress third-party WordPress admin notices on the `Form funnel` screen only, so unrelated plugin banners (license nags, etc.) do not pollute the report UI.
+
+= 1.0.35 =
+* Fix form funnel date picker: initialize jQuery UI datepicker via dedicated enqueued script (footer-safe timing) and load base jQuery UI theme CSS so calendar reliably appears.
+* Improve HTML v1 variant lock: match by `basename(html_file) === v1.html` so rows with stored paths like `variants/v1.html` are detected correctly.
+
+= 1.0.34 =
+* Funnel filters simplified: remove Test/Variant selectors from the UI entirely and show fixed scope (HTML v1 only).
+* Date UX hardening: replace browser-dependent `type=date` picker with jQuery UI datepicker (`yyyy-mm-dd`) for consistent click-to-open calendar behavior.
+
+= 1.0.33 =
+* Form funnel scope hard-locked to HTML v1 variant (`v1.html`) so KPI cards (including PageViews) no longer aggregate other variants in the same test.
+* Variant dropdown hidden in funnel view to avoid confusion when the report is intentionally v1-only.
+
+= 1.0.32 =
+* Form funnel dashboard adds a new KPI card after `Funnel event rows`: **PageViews** (total + unique visitors) sourced from `wp_cah_pageviews` with the same test/variant/date filters.
+
+= 1.0.31 =
+* Form funnel UX: date fields now auto-open the native calendar picker on focus/click (where supported) to avoid manual typing.
+* Added inline info-tooltips (ⓘ) for KPIs and table columns (`Total`, `Completions`, `% Completed`, `Abandonments`, `% Abandon`) explaining formulas and semantics.
+* Simplified filters: hide Test/Variant dropdowns when there is only one option (HTML-only setups), preserving values via hidden inputs.
+
+= 1.0.30 =
+* Improve abandonment capture reliability: add `pagehide` + `beforeunload` listeners in HTML v1 (in addition to `visibilitychange`) so refresh/tab-close/navigation are captured more consistently.
+* Add short dedupe window for abandon events per step to avoid duplicate emissions when multiple browser lifecycle events fire together.
+
+= 1.0.29 =
+* Fix missing funnel completions: step 12 now emits `step_completed` even when submit button calls `gfSubmit()` directly (previously bypassed `gfAdvance`, so completions stayed at 0).
+* Abandon signal now also fires from step 1 (`gfCurStep >= 1`) instead of waiting until step > 1.
+
+= 1.0.28 =
+* Form funnel KPI alignment fix: completions and conversion rate now use step-tracker data (step 12 completions) so percentages stay coherent with tracked visits.
+* Form funnel visual refresh: cleaner high-contrast cards/table styling for readability in WP admin.
+
+= 1.0.27 =
+* Form funnel now excludes legacy `cah_pageviews` history from step math. KPI/top-of-funnel totals use distinct visitors seen in `cah_form_funnel_events` for the selected range, preventing inflated 100% abandon right after rollout.
+
+= 1.0.26 =
+* Fix funnel capture resilience: `variants/v1.html` now posts `/form-funnel` directly as a fallback when a stale cached `tracking.js` lacks `trackFunnel`, preventing silent drops right after deploys.
+* Add warning logs for invalid `/form-funnel` payloads (`rest.form_funnel.400`) so step-name/step-number mismatches are visible in Admin Logs.
+
+= 1.0.25 =
+* **Form funnel (first-party)**: new `wp_cah_form_funnel_events` table + `POST /wp-json/cah-split/v1/form-funnel` for `step_completed` / `form_abandon` beacons from HTML v1 (`variants/v1.html` + `assets/tracking.js`).
+* **Admin**: **Split Tester → Form funnel** dashboard — KPIs (page views, HTML v1 completions, CR, raw event count), 12-question table (Total / Completions / % / Abandonments), horizontal Chart.js completion % chart, date + test + variant filters (dashboard timezone aware).
+* **Funnel math**: Phone step “Total” entrants use Zip completions so users who skip conditional Insured are not under-counted.
+* **Reset test stats** now also deletes funnel events for that test.
 
 = 1.0.24 =
 * HTML V1 form UX upgrades:
@@ -179,11 +265,11 @@ After deploying 1.0.16, replace the snippet pasted into both `/thank-you/` and `
 * For variants whose `html_file` is set, the stored `url` column is now `/<pretty_path>/` when a pretty path exists, otherwise the legacy `/_cah/v/<test>/<variant>/`. The legacy URL keeps working as a hidden alias because the existing rewrite rule (`^_cah/v/...`) is unchanged.
 
 = 1.0.12 =
-* Added a **Dashboard timezone** selector to the plugin Settings page. The dashboard now interprets date-range filters and buckets the per-day chart in the chosen zone instead of always-UTC. Lead and pageview rows continue to be stored in UTC; this change only affects how stored timestamps are read and displayed.
+* Added a **Dashboard timezone** selector to the plugin Settings page. Later correction in 1.0.42: rows are actually stored in WordPress local wall-clock time via `current_time('mysql')`, so stats now compare picker dates directly against stored `created_at`.
 * New `dashboard_timezone` option, default `'site'` (= `wp_timezone()`). Whitelisted choices: site default, UTC, and the seven IANA US zones (`America/New_York`, `America/Chicago`, `America/Denver`, `America/Phoenix`, `America/Los_Angeles`, `America/Anchorage`, `Pacific/Honolulu`).
 * `Settings::dashboardTimezone()` returns a resolved `\DateTimeZone` instance with a safe fallback chain (chosen value -> site timezone -> UTC).
-* `Admin::parseDateRange()` now computes default "from" / "to" in the dashboard timezone instead of WP site time / UTC.
-* `StatsRepository` accepts an optional `Settings` injection. `overview()`, `quickStatsForTests()`, `perVariant()`, and `byUtm()` convert local date strings to UTC for `WHERE created_at` clauses. `dailySeries()` groups via `DATE(created_at + INTERVAL <offset> SECOND)` so per-day buckets line up with the chosen zone without depending on populated MySQL `mysql.time_zone_name` tables (Hostinger ships them empty). DST-boundary days inherit the offset that is current at query time, which is acceptable for an observational dashboard.
+* `Admin::parseDateRange()` originally computed default "from" / "to" in the dashboard timezone; later correction in 1.0.42 anchors date defaults to the WordPress site timezone to match `current_time('mysql')` storage.
+* `StatsRepository` accepts an optional `Settings` injection. Later correction in 1.0.42: because `created_at` is stored in WordPress local time, stats compare local date strings directly and `dailySeries()` groups via `DATE(created_at)`.
 * Settings UI shows the resolved current local time alongside the dropdown so the chosen value can be sanity-checked at a glance.
 
 = 1.0.11 =

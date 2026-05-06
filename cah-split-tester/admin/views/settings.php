@@ -95,7 +95,7 @@ if ($userErr) {
                             $nowLocal = (new \DateTimeImmutable('now', $resolved))->format('Y-m-d H:i T');
                             printf(
                                 /* translators: %s: current local time in selected zone */
-                                esc_html__('Used to interpret all date filters and to bucket the per-day chart. Leads are stored in UTC and converted on read — changing this never moves data, only how it’s displayed. Currently resolved to: %s', 'cah-split'),
+                                esc_html__('Informational timezone display. Existing lead/pageview timestamps are stored in WordPress site-local time, and date filters follow the WordPress site timezone so they match stored rows. Changing this never moves data. Currently resolved to: %s', 'cah-split'),
                                 '<strong>' . esc_html($nowLocal) . '</strong>'
                             );
                             ?>

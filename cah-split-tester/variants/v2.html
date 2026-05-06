@@ -6,7 +6,7 @@
   <title>Injured in an Accident? | CarAccidentHelp.net</title>
   <meta name="description" content="Connect with top car accident lawyers who fight to maximize your payout. Use our free compensation calculator to see what you qualify for.">
 
-  <!-- Google Tag Manager -->
+  <!-- Google Tag Manager (CRÍTICO — dispara Hyros, FB pixel, GA, etc.) -->
   <script>
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({ event: 'cah_form_boot', grow_buttonText: 'form_start' });
@@ -28,6 +28,96 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700;800&family=Open+Sans:wght@400;500;600&family=Poppins:wght@400;500;600;700&family=Mulish:wght@400;500;600;700&family=Abel&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700;800&family=Open+Sans:wght@400;500;600&family=Poppins:wght@400;500;600;700&family=Mulish:wght@400;500;600;700&family=Abel&display=swap"></noscript>
 
+  <!-- =========================================================================
+       CAH SPLIT TESTER — STANDALONE DEMO BOOTSTRAP (real flow, NO skip_make)
+       Used when the tracking team is validating the end-to-end pipeline:
+         - leads forwarded to Make.com
+         - redirects to /thank-you/ /finished/ /diminished-value-claim/
+         - Hyros, GTM, FB pixel, TrustedForm — all firing as in production
+       Sentinel test_id=99999/variant_id=99998 keeps demo leads out of real
+       A/B-test reports.
+  ========================================================================= -->
+  <script>
+  (function () {
+    if (window.cahSplit && window.cahSplit.rest_base) return;
+    var rnd = function () {
+      return 'demo-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+    };
+    window.cahSplit = {
+      test_id:      99999,
+      test_slug:    'cah-demo',
+      variant_id:   99998,
+      variant_slug: 'cah-demo-variant',
+      visitor_id:   rnd(),
+      rest_base:    'https://caraccidenthelp.net/wp-json/cah-split/v1',
+      nonce:        ''
+    };
+
+    window.cahSplit.submitLead = function (makePayload) {
+      return fetch(window.cahSplit.rest_base + '/lead', {
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          test_id:      window.cahSplit.test_id,
+          variant_id:   window.cahSplit.variant_id,
+          visitor_id:   window.cahSplit.visitor_id,
+          source:       'path_a_html_v1',
+          make_payload: makePayload
+        }),
+        keepalive: true
+      })
+      .then(function (r) { return r.ok ? r.json().catch(function () { return { success: true }; }) : { success: false, status: r.status }; })
+      .catch(function (e) { return { success: false, error: String(e && e.message || e) }; });
+    };
+
+    window.cahSplit.trackPageview = function () {
+      try {
+        fetch(window.cahSplit.rest_base + '/pageview', {
+          method:      'POST',
+          headers:     { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            test_id:    window.cahSplit.test_id,
+            variant_id: window.cahSplit.variant_id,
+            visitor_id: window.cahSplit.visitor_id,
+            path:       location.pathname,
+            referrer:   document.referrer || '',
+            user_agent: navigator.userAgent
+          }),
+          keepalive: true
+        }).catch(function () {});
+      } catch (e) {}
+    };
+
+    window.cahSplit.trackFunnel = function (evt) {
+      try {
+        fetch(window.cahSplit.rest_base + '/form-funnel', {
+          method:      'POST',
+          headers:     { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            test_id:     window.cahSplit.test_id,
+            variant_id:  window.cahSplit.variant_id,
+            visitor_id:  window.cahSplit.visitor_id,
+            event_type:  evt.event_type,
+            step_number: evt.step_number,
+            step_name:   evt.step_name || ''
+          }),
+          keepalive: true
+        }).catch(function () {});
+      } catch (e) {}
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', window.cahSplit.trackPageview);
+    } else {
+      window.cahSplit.trackPageview();
+    }
+
+    console.log('[cah-demo] real-flow bootstrap installed (Make.com WILL receive leads)', window.cahSplit);
+  })();
+  </script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; }

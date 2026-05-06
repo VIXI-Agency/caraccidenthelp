@@ -1,7 +1,8 @@
 /*!
  * CAH Split Tester — Path B (thank-you / disqualified) capture script.
  *
- * Auto-injected by PathBInjector on /thank-you/ and /diminished-value-claim/.
+ * Auto-injected by PathBInjector on /thank-you/, /diminished-value-claim/,
+ * and /finished/.
  *
  * Capture-everything policy (v1.0.17+):
  *   - cookie present + lead_stage valid       → POST /lead with source='path_b_growform'        → row in wp_cah_leads
@@ -63,6 +64,11 @@
         from_cah_form: params.from_cah_form || ''
     };
 
+    function currentPathLabel() {
+        var path = window.location.pathname || '/';
+        return path.replace(/^\/+|\/+$/g, '') || 'home';
+    }
+
     /**
      * Always-capture lead submitter. Sends to /lead with the given source tag.
      * variantId/visitorId may be null when the cookie was missing or unparseable.
@@ -76,7 +82,9 @@
             source:     source,
             fields:     params,
             form_meta: {
-                form_name:         'Growform via /thank-you/ (' + source + ')',
+                form_name:         'Path B capture via /' + currentPathLabel() + '/ (' + source + ')',
+                capture_path:      window.location.pathname || '',
+                capture_url:       pageContext.url,
                 variant_id:        variantId || null,
                 lead_stage:        params.lead_stage || '',
                 trusted_form_cert: params.TrustedForm_certUrl || ''

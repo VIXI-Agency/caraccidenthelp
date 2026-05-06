@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace VIXI\CahSplit;
 
+use VIXI\CahSplit\FormFunnelStepCatalog;
+use VIXI\CahSplit\Repositories\FormFunnelRepository;
 use VIXI\CahSplit\Repositories\LeadsRepository;
 use VIXI\CahSplit\Repositories\PageviewsRepository;
 use WP_REST_Request;
@@ -17,6 +19,9 @@ if (!defined('ABSPATH')) {
 final class RestApi
 {
     public const NAMESPACE = 'cah-split/v1';
+
+    /** Persisted lead source for HTML variant v1 submits (see tracking.js). */
+    public const SOURCE_PATH_A_HTML_V1 = 'path_a_html_v1';
 
     /**
      * Whitelist of values accepted in the optional `source` field of a /lead
@@ -33,7 +38,7 @@ final class RestApi
      *   unknown                       - source not provided or not recognized
      */
     public const ALLOWED_SOURCES = [
-        'path_a_html_v1',
+        self::SOURCE_PATH_A_HTML_V1,
         'path_b_growform',
         'path_b_no_cookie',
         'path_b_parse_failed_no_dot',
@@ -49,6 +54,7 @@ final class RestApi
         private readonly LeadStage $leadStage,
         private readonly LeadPayloadParser $parser,
         private readonly MakeForwarder $forwarder,
+        private readonly FormFunnelRepository $formFunnel,
         private readonly ?Logger $logger = null,
     ) {
     }
@@ -81,6 +87,12 @@ final class RestApi
         \register_rest_route(self::NAMESPACE, '/lead-skip', [
             'methods'             => WP_REST_Server::CREATABLE,
             'callback'            => [$this, 'handleLeadSkip'],
+            'permission_callback' => '__return_true',
+        ]);
+
+        \register_rest_route(self::NAMESPACE, '/form-funnel', [
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => [$this, 'handleFormFunnel'],
             'permission_callback' => '__return_true',
         ]);
     }
@@ -396,6 +408,74 @@ final class RestApi
         ]);
 
         return new WP_REST_Response(['success' => true, 'reason' => $reason], 200);
+    }
+
+    public function handleFormFunnel(WP_REST_Request $request): WP_REST_Response
+    {
+        $body = $this->readBody($request);
+
+        $testId    = isset($body['test_id']) ? (int) $body['test_id'] : 0;
+        $variantId = isset($body['variant_id']) ? (int) $body['variant_id'] : 0;
+        $visitorId = isset($body['visitor_id']) ? \sanitize_text_field((string) $body['visitor_id']) : '';
+        $eventType = isset($body['event_type']) ? \sanitize_key((string) $body['event_type']) : '';
+        $stepNum   = isset($body['step_number']) ? (int) $body['step_number'] : 0;
+        $stepSlug  = isset($body['step_name']) ? \sanitize_key((string) $body['step_name']) : '';
+
+        $allowedEv = ['form_view', 'step_completed', 'form_abandon'];
+
+        if ($testId <= 0 || $variantId <= 0 || $visitorId === '' || !\in_array($eventType, $allowedEv, true)) {
+            $this->logger?->warn('rest.form_funnel.400', 'invalid request', [
+                'test_id'    => $testId,
+                'variant_id' => $variantId,
+                'visitor_id' => $visitorId !== '',
+                'event_type' => $eventType,
+                'step_num'   => $stepNum,
+                'step_slug'  => $stepSlug,
+                'body_preview' => $this->bodyPreview($request),
+            ]);
+            return new WP_REST_Response(['success' => false, 'message' => 'invalid request'], 400);
+        }
+
+        if ($stepNum < 1 || $stepNum > FormFunnelStepCatalog::maxStep()) {
+            $this->logger?->warn('rest.form_funnel.400', 'invalid step_number', [
+                'step_num' => $stepNum,
+                'body_preview' => $this->bodyPreview($request),
+            ]);
+            return new WP_REST_Response(['success' => false, 'message' => 'invalid step_number'], 400);
+        }
+
+        $expectedSlug = FormFunnelStepCatalog::slugForStep($stepNum);
+        if ($stepSlug === '' || $expectedSlug !== $stepSlug || !\in_array($stepSlug, FormFunnelStepCatalog::allowedSlugs(), true)) {
+            $this->logger?->warn('rest.form_funnel.400', 'invalid step_name for step_number', [
+                'step_num'      => $stepNum,
+                'step_slug'     => $stepSlug,
+                'expected_slug' => $expectedSlug,
+                'body_preview'  => $this->bodyPreview($request),
+            ]);
+            return new WP_REST_Response(['success' => false, 'message' => 'invalid step_name for step_number'], 400);
+        }
+
+        try {
+            $this->formFunnel->create([
+                'test_id'     => $testId,
+                'variant_id'  => $variantId,
+                'visitor_id'  => $visitorId,
+                'event_type'    => $eventType,
+                'step_number'   => $stepNum,
+                'step_name'     => $stepSlug,
+            ]);
+        } catch (\Throwable $e) {
+            $this->logger?->error('rest.form_funnel.insert', $e->getMessage(), [
+                'test_id'    => $testId,
+                'variant_id' => $variantId,
+                'visitor_id' => $visitorId,
+                'exception'  => $e->getMessage(),
+                'ip_hash'    => $this->ipHash(),
+            ]);
+            return new WP_REST_Response(['success' => false, 'message' => 'could not persist event'], 500);
+        }
+
+        return new WP_REST_Response(['success' => true], 201);
     }
 
     private function readBody(WP_REST_Request $request): array

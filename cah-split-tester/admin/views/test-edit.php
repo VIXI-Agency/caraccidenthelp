@@ -49,17 +49,20 @@ $availableFiles = VariantRenderer::availableFiles();
     <?php endif; ?>
     <?php if (!empty($_GET['reset_stats'])) :
         $rPv = isset($_GET['reset_pageviews']) ? (int) $_GET['reset_pageviews'] : 0;
+        $rFn = isset($_GET['reset_funnel']) ? (int) $_GET['reset_funnel'] : 0;
         $rLd = isset($_GET['reset_leads']) ? (int) $_GET['reset_leads'] : 0;
         ?>
         <div class="notice notice-success is-dismissible">
             <p><?php printf(
-                esc_html__('Stats reset for this test. Deleted %1$s pageviews and %2$s leads.', 'cah-split'),
+                esc_html__('Stats reset for this test. Deleted %1$s pageviews, %2$s form funnel events, and %3$s leads.', 'cah-split'),
                 '<strong>' . esc_html(number_format_i18n($rPv)) . '</strong>',
+                '<strong>' . esc_html(number_format_i18n($rFn)) . '</strong>',
                 '<strong>' . esc_html(number_format_i18n($rLd)) . '</strong>'
             ); ?></p>
         </div>
     <?php endif; ?>
     <?php if (!empty($_GET['reprocessed'])) :
+        $rpScope       = isset($_GET['rp_scope'])        ? (string) $_GET['rp_scope'] : 'unknown';
         $rpScanned     = isset($_GET['rp_scanned'])      ? (int) $_GET['rp_scanned']      : 0;
         $rpUpdated     = isset($_GET['rp_updated'])      ? (int) $_GET['rp_updated']      : 0;
         $rpQualified   = isset($_GET['rp_qualified'])    ? (int) $_GET['rp_qualified']    : 0;
@@ -70,7 +73,9 @@ $availableFiles = VariantRenderer::availableFiles();
         ?>
         <div class="notice notice-success is-dismissible">
             <p>
-                <strong><?php esc_html_e('Unknown leads re-processed.', 'cah-split'); ?></strong><br />
+                <strong><?php echo esc_html($rpScope === 'all'
+                    ? __('All leads re-processed.', 'cah-split')
+                    : __('Unknown leads re-processed.', 'cah-split')); ?></strong><br />
                 <?php printf(
                     esc_html__('Scanned: %1$s · Updated: %2$s · Qualified: %3$s · Disqualified: %4$s · Still unknown: %5$s · Skipped (no payload): %6$s · Errors: %7$s', 'cah-split'),
                     '<strong>' . esc_html(number_format_i18n($rpScanned)) . '</strong>',
@@ -230,9 +235,18 @@ $availableFiles = VariantRenderer::availableFiles();
             admin_url('admin-post.php?action=cah_split_reprocess_unknown&test_id=' . $id),
             'cah_split_reprocess_unknown'
         );
+        $reprocessAllUrl = wp_nonce_url(
+            admin_url('admin-post.php?action=cah_split_reprocess_all&test_id=' . $id),
+            'cah_split_reprocess_all'
+        );
         $reprocessConfirm = sprintf(
             /* translators: %s: test name */
             __('Re-process every lead currently marked as "unknown" for "%s"? This re-runs the current parser and stage classifier against the stored raw payloads and updates the rows. Safe to run multiple times.', 'cah-split'),
+            $name
+        );
+        $reprocessAllConfirm = sprintf(
+            /* translators: %s: test name */
+            __('Re-process ALL leads for "%s"? This refreshes historical lead_stage values using current rules.', 'cah-split'),
             $name
         );
         ?>
@@ -248,6 +262,12 @@ $availableFiles = VariantRenderer::availableFiles();
                    class="button button-secondary"
                    onclick="return confirm('<?php echo esc_js($reprocessConfirm); ?>');">
                     <?php esc_html_e('Re-process unknown leads', 'cah-split'); ?>
+                </a>
+                <a href="<?php echo esc_url($reprocessAllUrl); ?>"
+                   class="button button-secondary"
+                   style="margin-left:8px;"
+                   onclick="return confirm('<?php echo esc_js($reprocessAllConfirm); ?>');">
+                    <?php esc_html_e('Re-process ALL leads (rules refresh)', 'cah-split'); ?>
                 </a>
             </p>
         </div>
